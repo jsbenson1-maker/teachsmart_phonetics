@@ -1023,12 +1023,16 @@ function handleL3PointerUp(e) {
     const pullDist = Math.sqrt(pullX*pullX + pullY*pullY);
 
     if (pullDist > 15) {
-        // Set velocities opposite to pull direction
-        projectile.vx = -pullX * 0.12;
-        projectile.vy = -pullY * 0.12 - 3.5; 
-        projectile.vz = pullY * 0.0003 + 0.025; 
+        // Set velocities directly opposite to pull in screen coordinates
+        projectile.vx = -pullX * 0.18;
+        projectile.vy = -pullY * 0.18; 
+        projectile.vz = 0.025; // constant depth velocity for 40 frames of flight
         
+        // Launch flight directly from slingshot rest position
+        projectile.x = slingshot.x;
+        projectile.y = slingshot.y;
         projectile.z = 0;
+        
         isFlying = true;
         playSynthSound('zap');
     } else {
@@ -1085,10 +1089,9 @@ function level3Loop() {
 
         // Check collision at depth z >= 1.0
         if (projectile.z >= 1.0 && !l3IsChecking) {
-            // Check collision in projected coordinates
-            const scale = 1 - 1.0 * 0.72; // 0.28
-            const projX = w / 2 + (projectile.x - w / 2) * scale;
-            const projY = horizonY + (projectile.y - horizonY) * scale;
+            // Check collision directly in screen coordinates
+            const projX = projectile.x;
+            const projY = projectile.y;
 
             let hit = false;
             balloons.forEach(b => {
@@ -1135,10 +1138,10 @@ function level3Loop() {
             const dy = projectile.y - slingshot.y;
             blockScale = 1.0 + dy * 0.0035;
         } else if (isFlying) {
-            // Interpolate scale down towards the horizon
+            // Interpolate scale down towards the horizon (visual shrink only)
             blockScale = 1.0 - projectile.z * 0.72; // shrinks to 0.28 at z = 1.0
-            projX = w / 2 + (projectile.x - w / 2) * blockScale;
-            projY = horizonY + (projectile.y - horizonY) * blockScale;
+            projX = projectile.x;
+            projY = projectile.y;
         } else {
             // Rest position
             projectile.x = slingshot.x;
@@ -1276,28 +1279,25 @@ function drawTrajectory3D(ctx, w, h, horizonY, slingshot, projectile) {
     const pullX = projectile.x - slingshot.x;
     const pullY = projectile.y - slingshot.y;
 
-    let tx = projectile.x;
-    let ty = projectile.y;
+    let tx = slingshot.x;
+    let ty = slingshot.y;
     let tz = 0;
 
-    let tvx = -pullX * 0.12;
-    let tvy = -pullY * 0.12 - 3.5;
-    let tvz = pullY * 0.0003 + 0.025;
+    let tvx = -pullX * 0.18;
+    let tvy = -pullY * 0.18;
+    let tvz = 0.025;
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 40; i++) {
         tx += tvx;
         ty += tvy;
-        tvy += gravity;
+        tvy += gravity; // gravity = 0.2
         tz += tvz;
 
-        if (tz > 1.1) break;
+        if (tz > 1.05) break;
 
         const scale = 1 - tz * 0.72;
-        const projX = w / 2 + (tx - w / 2) * scale;
-        const projY = horizonY + (ty - horizonY) * scale;
-
         ctx.beginPath();
-        ctx.arc(projX, projY, 4 * scale, 0, Math.PI * 2);
+        ctx.arc(tx, ty, 4 * scale, 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.restore();
@@ -1386,11 +1386,8 @@ function checkSlingshotMatch(balloon) {
     const combinedWord = projectile.text.replace('-', '') + balloon.text.replace('-', '');
 
     const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
-    // Balloons are drawn in back coordinates which match canvas coordinates
-    const scale = 1 - 1.0 * 0.72; // 0.28
-    const horizonY = l3Canvas.height * 0.45;
-    const projX = l3Canvas.width / 2 + (projectile.x - l3Canvas.width / 2) * scale;
-    const projY = horizonY + (projectile.y - horizonY) * scale;
+    const projX = projectile.x;
+    const projY = projectile.y;
 
     const screenX = projX + playfieldRect.left;
     const screenY = projY + playfieldRect.top;
@@ -1463,11 +1460,11 @@ const l4Configs = [
         phonemes: ["b", "a", "t"],
         inventory: ["c", "p", "o", "t"],
         targetCards: {
-            "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common" },
-            "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon" },
-            "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare" },
-            "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon" },
-            "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare" }
+            "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common", hint: "Meow! Can you make the word CAT?" },
+            "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon", hint: "Put it on your head. Can you craft CAP?" },
+            "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare", hint: "A friendly police officer. Can you craft COP?" },
+            "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon", hint: "It spins around and around! Can you craft TOP?" },
+            "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare", hint: "Fun to play with. Can you craft TOY?" }
         },
         startPrompt: "Start word is: bat. Drag sound bubbles to mutate the word!",
         clipKey: "level4_start_bat"
@@ -1477,11 +1474,11 @@ const l4Configs = [
         phonemes: ["p", "i", "g"],
         inventory: ["n", "e", "a", "f"],
         targetCards: {
-            "pin": { name: "Safety Pin Card", art: "🧷", rarity: "Common" },
-            "pen": { name: "Ink Pen Card", art: "🖋️", rarity: "Uncommon" },
-            "pan": { name: "Frying Pan Card", art: "🍳", rarity: "Common" },
-            "fan": { name: "Electric Fan Card", art: "🪭", rarity: "Rare" },
-            "fin": { name: "Shark Fin Card", art: "🦈", rarity: "Rare" }
+            "pin": { name: "Safety Pin Card", art: "🧷", rarity: "Common", hint: "A sharp safety pin. Can you craft PIN?" },
+            "pen": { name: "Ink Pen Card", art: "🖋️", rarity: "Uncommon", hint: "Used for writing. Can you craft PEN?" },
+            "pan": { name: "Frying Pan Card", art: "🍳", rarity: "Common", hint: "Used to cook food. Can you craft PAN?" },
+            "fan": { name: "Electric Fan Card", art: "🪭", rarity: "Rare", hint: "Keeps you cool on a hot day. Can you craft FAN?" },
+            "fin": { name: "Shark Fin Card", art: "🦈", rarity: "Rare", hint: "Helps a fish swim. Can you craft FIN?" }
         },
         startPrompt: "Start word is: pig. Drag sound bubbles to mutate the word!",
         clipKey: "level4_start_pig"
@@ -1664,6 +1661,25 @@ function loadLevel4State() {
 
         bubblesContainer.appendChild(bubble);
     });
+
+    // Update target word hint box
+    updateLevel4Hint();
+}
+
+function updateLevel4Hint() {
+    const hintBox = document.getElementById("l4-hint-box");
+    if (!hintBox) return;
+
+    // Find locked words
+    const lockedWords = Object.keys(l4CardRewards).filter(word => !l4EarnedCards.has(word));
+    if (lockedWords.length > 0) {
+        // Show hint for the first locked word
+        const targetWord = lockedWords[0];
+        const cardDef = l4CardRewards[targetWord];
+        hintBox.innerHTML = `💡 Hint: <strong>"${cardDef.hint}"</strong>`;
+    } else {
+        hintBox.innerHTML = `🎉 You have unlocked all cards!`;
+    }
 }
 
 function handlePhonemeDrop(phoneme, slotIdx) {
