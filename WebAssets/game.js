@@ -270,6 +270,8 @@ function stopLevel4() {
    ================================================================= */
 
 let l1LoopId = null;
+let l2LoopId = null;
+let l3LoopId = null;
 let l1SentencesDatabase = [
     { text: "The quick brown fox", words: ["The", "quick", "brown", "fox"] },
     { text: "Phonetics is very fun", words: ["Phonetics", "is", "very", "fun"] },

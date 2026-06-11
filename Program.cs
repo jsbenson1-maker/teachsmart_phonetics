@@ -74,7 +74,7 @@ namespace PhoneticsEdu
             bool keepRunning = true;
             while (keepRunning)
             {
-                Console.Clear();
+                SafeClear();
                 Console.WriteLine("=================================================================");
                 Console.WriteLine("       TEACHSMART: PHONETIC CHALLENGE - GRAPHICAL LAUNCHER");
                 Console.WriteLine("=================================================================");
@@ -146,7 +146,7 @@ namespace PhoneticsEdu
             bool running = true;
             while (running)
             {
-                Console.Clear();
+                SafeClear();
                 Console.WriteLine("=================================================================");
                 Console.WriteLine("         TEACHSMART: PHONETIC CHALLENGE - PLAYABLE GAME          ");
                 Console.WriteLine("=================================================================");
@@ -190,7 +190,7 @@ namespace PhoneticsEdu
 
         private static async Task PlayLevel1WordBlaster()
         {
-            Console.Clear();
+            SafeClear();
             Console.WriteLine("=================================================================");
             Console.WriteLine("           PLAYING LEVEL 1: WORD BLASTER (Space Invaders)        ");
             Console.WriteLine("=================================================================");
@@ -237,7 +237,7 @@ namespace PhoneticsEdu
 
         private static async Task PlayLevel2SyllableShredder()
         {
-            Console.Clear();
+            SafeClear();
             Console.WriteLine("=================================================================");
             Console.WriteLine("          PLAYING LEVEL 2: SYLLABLE SHREDDER (Fruit Ninja)       ");
             Console.WriteLine("=================================================================");
@@ -291,7 +291,7 @@ namespace PhoneticsEdu
 
         private static async Task PlayLevel3OnsetRime()
         {
-            Console.Clear();
+            SafeClear();
             Console.WriteLine("=================================================================");
             Console.WriteLine("        PLAYING LEVEL 3: ONSET-RIME CONSTRUCTOR (Tetris)        ");
             Console.WriteLine("=================================================================");
@@ -346,7 +346,7 @@ namespace PhoneticsEdu
 
         private static async Task PlayLevel4PhonemeIsolator()
         {
-            Console.Clear();
+            SafeClear();
             Console.WriteLine("=================================================================");
             Console.WriteLine("          PLAYING LEVEL 4: PHONEME ISOLATOR (Crafting Grid)       ");
             Console.WriteLine("=================================================================");
@@ -402,7 +402,7 @@ namespace PhoneticsEdu
 
         private static async Task PlayDiagnosticsMenu()
         {
-            Console.Clear();
+            SafeClear();
             Console.WriteLine("=================================================================");
             Console.WriteLine("               SYNTH VOICE PRO AUDIO DIAGNOSTICS HUB             ");
             Console.WriteLine("=================================================================");
@@ -713,6 +713,11 @@ namespace PhoneticsEdu
             {
                 Console.WriteLine($"Warning: Lifecycle method '{methodName}' not found on {type.Name}");
             }
+        }
+
+        private static void SafeClear()
+        {
+            try { Console.Clear(); } catch { }
         }
     }
 }
