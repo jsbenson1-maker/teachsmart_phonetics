@@ -95,7 +95,27 @@ function playSynthSound(type) {
     }
 }
 
-// Speak text using Web Speech API (with SSML stripping)
+// Find the best available voice, prioritizing natural neural and Google voices
+function getBestVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    const preferences = [
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("natural"),
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("google"),
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("microsoft"),
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("apple"),
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("zira"),
+        v => v.lang.startsWith("en") && v.name.toLowerCase().includes("david"),
+        v => v.lang.startsWith("en")
+    ];
+
+    for (const pref of preferences) {
+        const matched = voices.find(pref);
+        if (matched) return matched;
+    }
+    return null;
+}
+
+// Speak text using Web Speech API (with SSML stripping and kid-friendly configurations)
 function speakText(text) {
     // Strip XML/SSML tags
     let cleanText = text.replace(/<[^>]*>/g, '');
@@ -114,14 +134,14 @@ function speakText(text) {
     }
     
     if (!selectedVoice) {
-        // Find a standard English voice
-        selectedVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural"))) || voices.find(v => v.lang.startsWith("en"));
+        selectedVoice = getBestVoice();
     }
     
     if (selectedVoice) {
         utterance.voice = selectedVoice;
     }
-    utterance.rate = 0.9; // Slightly slower, kid-friendly speed
+    utterance.pitch = 1.15; // Warmer, friendlier tone for kids
+    utterance.rate = 0.85;  // Clearer, deliberate speed for phonetics
     window.speechSynthesis.speak(utterance);
 }
 
@@ -778,9 +798,10 @@ let l3Words = [
     { target: "ship", onset: "sh-", rime: "-ip", distractor: "-ed", correctX: 0.25 }
 ];
 let l3CurrentIndex = 0;
+let l3IsChecking = false; // Double-trigger checking lock
 
 // Block states
-let fallingBlock = { text: "c-", x: 0, y: 0, w: 90, h: 50 };
+let fallingBlock = { text: "c-", x: 0, y: 0, w: 90, h: 50, xPct: 0.25 };
 let rimeLeft = { text: "-at", x: 0, y: 0, w: 100, h: 50 };
 let rimeRight = { text: "-ing", x: 0, y: 0, w: 100, h: 50 };
 let dropSpeed = 1.0;
@@ -791,6 +812,7 @@ function startLevel3() {
     resizeCanvas(l3Canvas);
 
     l3CurrentIndex = 0;
+    l3IsChecking = false;
     
     // Bind Controls
     document.getElementById("l3-btn-left").onclick = () => moveFallingBlock(-1);
@@ -829,38 +851,28 @@ function loadLevel3Round() {
     // Spawn block data
     rimeLeft.text = leftIsCorrect ? round.rime : round.distractor;
     rimeRight.text = leftIsCorrect ? round.distractor : round.rime;
-    
-    // Position rime blocks at bottom
-    const w = l3Canvas.width;
-    const h = l3Canvas.height;
-    
-    rimeLeft.x = w * 0.25 - rimeLeft.w / 2;
-    rimeLeft.y = h - 140;
-    rimeRight.x = w * 0.75 - rimeRight.w / 2;
-    rimeRight.y = h - 140;
 
-    // Reset falling block
+    // Reset falling block with normalized coordinate
     fallingBlock.text = round.onset;
-    fallingBlock.x = w * 0.25 - fallingBlock.w / 2; // Default start left
+    fallingBlock.xPct = 0.25; // Default starts on left
     fallingBlock.y = 20;
     dropSpeed = 0.8;
+    l3IsChecking = false; // Reset lock
 }
 
 function moveFallingBlock(dir) {
-    const w = l3Canvas.width;
+    if (l3IsChecking) return;
     playSynthSound('snap');
 
     if (dir < 0) {
-        // Move left
-        fallingBlock.x = w * 0.25 - fallingBlock.w / 2;
+        fallingBlock.xPct = 0.25;
     } else {
-        // Move right
-        fallingBlock.x = w * 0.75 - fallingBlock.w / 2;
+        fallingBlock.xPct = 0.75;
     }
 }
 
 function dropFallingBlock() {
-    // Drop instantly
+    if (l3IsChecking) return;
     dropSpeed = 16.0;
 }
 
@@ -868,19 +880,32 @@ function level3Loop() {
     if (!l3LoopId) return;
 
     l3Ctx.clearRect(0, 0, l3Canvas.width, l3Canvas.height);
+    const w = l3Canvas.width;
     const h = l3Canvas.height;
+
+    // Dynamically update rime positions based on current canvas dimension (handles resize/delayed rendering)
+    rimeLeft.x = w * 0.25 - rimeLeft.w / 2;
+    rimeLeft.y = h - 140;
+    rimeRight.x = w * 0.75 - rimeRight.w / 2;
+    rimeRight.y = h - 140;
+
+    // Dynamically calculate falling block absolute position
+    fallingBlock.x = w * fallingBlock.xPct - fallingBlock.w / 2;
 
     // Draw lines/slots indicating landing zones
     drawLandingZones(l3Ctx);
 
-    // Update falling block
-    fallingBlock.y += dropSpeed;
+    // Update falling block if not landing/checking
+    if (!l3IsChecking) {
+        fallingBlock.y += dropSpeed;
 
-    // Check collision landing
-    const landingY = h - 190;
-    if (fallingBlock.y >= landingY) {
-        fallingBlock.y = landingY;
-        checkMatchLanding();
+        // Check collision landing
+        const landingY = h - 190;
+        if (fallingBlock.y >= landingY) {
+            fallingBlock.y = landingY;
+            l3IsChecking = true; // Lock execution
+            checkMatchLanding();
+        }
     }
 
     // Render rime blocks
@@ -971,10 +996,9 @@ function drawConstructorBlock(ctx, block, fill, stroke) {
 
 function checkMatchLanding() {
     const round = l3Words[l3CurrentIndex];
-    const w = l3Canvas.width;
     
-    // Is falling block on Left or Right?
-    const onLeft = Math.abs(fallingBlock.x - (w * 0.25 - fallingBlock.w / 2)) < 10;
+    // Check lanes using normalized coordinates (independent of canvas size)
+    const onLeft = fallingBlock.xPct === 0.25;
     const selectedRime = onLeft ? rimeLeft.text : rimeRight.text;
     const combinedWord = fallingBlock.text.replace('-', '') + selectedRime.replace('-', '');
 
@@ -1014,10 +1038,11 @@ function checkMatchLanding() {
         triggerScreenShake("l3-game-playfield");
         createExplosion(fallingBlock.x + fallingBlock.w / 2, fallingBlock.y + 25, '#ff0000');
 
-        // Respawn same block
+        // Respawn block after delay and unlock
         setTimeout(() => {
             fallingBlock.y = 20;
             dropSpeed = 0.8;
+            l3IsChecking = false; // Unlock for next try
         }, 1200);
     }
 }
@@ -1063,24 +1088,6 @@ function loadLevel4State() {
         slot.className = "letter-slot filled";
         slot.dataset.index = idx;
         slot.innerText = phon;
-
-        // Setup drop event handlers
-        slot.ondragover = (e) => {
-            e.preventDefault();
-            slot.classList.add("hovered");
-        };
-
-        slot.ondragleave = () => {
-            slot.classList.remove("hovered");
-        };
-
-        slot.ondrop = (e) => {
-            e.preventDefault();
-            slot.classList.remove("hovered");
-            const draggedPhoneme = e.dataTransfer.getData("text/plain");
-            handlePhonemeDrop(draggedPhoneme, idx);
-        };
-
         slotsContainer.appendChild(slot);
     });
 
@@ -1092,10 +1099,98 @@ function loadLevel4State() {
         const bubble = document.createElement("div");
         bubble.className = "phoneme-bubble juice-btn";
         bubble.innerText = `/${letter}/`;
-        bubble.draggable = true;
+        bubble.style.touchAction = "none"; // Required for pointer dragging without page scrolls
 
-        bubble.ondragstart = (e) => {
-            e.dataTransfer.setData("text/plain", letter);
+        // Pointer-based fluid drag & drop (works on desktops & touchscreens natively)
+        bubble.onpointerdown = (e) => {
+            e.preventDefault();
+            bubble.releasePointerCapture(e.pointerId);
+
+            playSynthSound('snap');
+            bubble.style.transform = "scale(1.15)";
+            bubble.style.boxShadow = "0 8px 20px var(--accent-glow)";
+
+            const rect = bubble.getBoundingClientRect();
+            const shiftX = e.clientX - rect.left;
+            const shiftY = e.clientY - rect.top;
+
+            const origPosition = bubble.style.position;
+            const origZIndex = bubble.style.zIndex;
+            const origLeft = bubble.style.left;
+            const origTop = bubble.style.top;
+            const origTransition = bubble.style.transition;
+
+            bubble.style.position = "fixed";
+            bubble.style.zIndex = "1000";
+            bubble.style.transition = "none";
+
+            moveAt(e.clientX, e.clientY);
+
+            function moveAt(clientX, clientY) {
+                bubble.style.left = `${clientX - shiftX}px`;
+                bubble.style.top = `${clientY - shiftY}px`;
+            }
+
+            let hoveredSlot = null;
+
+            function onPointerMove(moveEvent) {
+                moveAt(moveEvent.clientX, moveEvent.clientY);
+
+                // Find slot underneath the drag element
+                bubble.style.pointerEvents = 'none';
+                const elemBelow = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+                bubble.style.pointerEvents = 'auto';
+
+                if (!elemBelow) return;
+
+                const slot = elemBelow.closest('.letter-slot');
+                if (slot) {
+                    if (hoveredSlot !== slot) {
+                        if (hoveredSlot) hoveredSlot.classList.remove('hovered');
+                        hoveredSlot = slot;
+                        hoveredSlot.classList.add('hovered');
+                    }
+                } else {
+                    if (hoveredSlot) {
+                        hoveredSlot.classList.remove('hovered');
+                        hoveredSlot = null;
+                    }
+                }
+            }
+
+            document.addEventListener('pointermove', onPointerMove);
+
+            bubble.onpointerup = (upEvent) => {
+                document.removeEventListener('pointermove', onPointerMove);
+                bubble.onpointerup = null;
+
+                bubble.style.pointerEvents = 'none';
+                const elemBelow = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
+                bubble.style.pointerEvents = 'auto';
+
+                const slot = elemBelow ? elemBelow.closest('.letter-slot') : null;
+
+                // Restore default styles
+                bubble.style.transform = "";
+                bubble.style.boxShadow = "";
+                bubble.style.position = origPosition;
+                bubble.style.zIndex = origZIndex;
+                bubble.style.left = origLeft;
+                bubble.style.top = origTop;
+                bubble.style.transition = origTransition;
+
+                if (slot) {
+                    slot.classList.remove('hovered');
+                    const slotIdx = parseInt(slot.dataset.index);
+                    handlePhonemeDrop(letter, slotIdx);
+                } else {
+                    // Slide back animation
+                    bubble.style.transition = "all 0.25s ease-out";
+                    setTimeout(() => {
+                        bubble.style.transition = origTransition;
+                    }, 250);
+                }
+            };
         };
 
         bubblesContainer.appendChild(bubble);
