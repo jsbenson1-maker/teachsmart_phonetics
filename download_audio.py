@@ -139,6 +139,10 @@ audio_clips = {
     "onset_n": "n",
     "onset_tr": "tr",
     "onset_b": "b",
+    "onset_a": "a",
+    "onset_t": "t",
+    "onset_p": "p",
+    "rime_ics": "ics",
     
     "rime_at": "at",
     "rime_ing": "ing",

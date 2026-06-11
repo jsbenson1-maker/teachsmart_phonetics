@@ -303,7 +303,9 @@ function startLevel1() {
 
     // Setup events
     document.getElementById("l1-replay-audio").onclick = () => {
-        speakText(l1Sentences[l1CurrentIndex].text, "level1_sentence_" + l1CurrentIndex);
+        const round = l1Sentences[l1CurrentIndex];
+        const audioIdx = l1SentencesDatabase.findIndex(s => s.text === round.text);
+        speakText(round.text, "level1_sentence_" + (audioIdx !== -1 ? audioIdx : 0));
     };
 
     loadLevel1Round();
@@ -329,7 +331,8 @@ function loadLevel1Round() {
     l1TargetWordIdx = 0;
 
     // Speak sentence (pre-recorded audio)
-    speakText(round.text, "level1_sentence_" + l1CurrentIndex);
+    const audioIdx = l1SentencesDatabase.findIndex(s => s.text === round.text);
+    speakText(round.text, "level1_sentence_" + (audioIdx !== -1 ? audioIdx : 0));
 
     // Remove old ships
     const playfield = document.getElementById("l1-game-playfield");
@@ -560,7 +563,9 @@ function startLevel2() {
 
     // Replay button
     document.getElementById("l2-replay-audio").onclick = () => {
-        speakText(l2Words[l2CurrentIndex].word, "level2_fullword_" + l2CurrentIndex);
+        const round = l2Words[l2CurrentIndex];
+        const audioIdx = l2WordsDatabase.findIndex(w => w.word === round.word);
+        speakText(round.word, "level2_fullword_" + (audioIdx !== -1 ? audioIdx : 0));
     };
 
     // Slice input handlers
@@ -630,7 +635,8 @@ function loadLevel2Round() {
     l2TargetSyllableIdx = 0;
 
     // Speak initial full word (pre-recorded audio)
-    speakText(round.word, "level2_fullword_" + l2CurrentIndex);
+    const audioIdx = l2WordsDatabase.findIndex(w => w.word === round.word);
+    speakText(round.word, "level2_fullword_" + (audioIdx !== -1 ? audioIdx : 0));
 
     // Clear old bubbles
     const playfield = document.getElementById("l2-game-playfield");
@@ -720,7 +726,8 @@ function sliceBlock(block, sliceX, sliceY) {
         createExplosion(sliceX, sliceY, '#00ffff');
 
         // Pronounce syllable (pre-recorded audio)
-        speakText(block.syllable, "level2_slice_reinforce_" + l2CurrentIndex + "_" + block.index);
+        const audioIdx = l2WordsDatabase.findIndex(w => w.word === round.word);
+        speakText(block.syllable, "level2_slice_reinforce_" + (audioIdx !== -1 ? audioIdx : 0) + "_" + block.index);
 
         l2TargetSyllableIdx++;
 
@@ -728,7 +735,8 @@ function sliceBlock(block, sliceX, sliceY) {
             // MERGE SUCCESS
             setTimeout(() => {
                 playSynthSound('success');
-                speakText(round.word, "level2_fullword_" + l2CurrentIndex);
+                const audioIdx = l2WordsDatabase.findIndex(w => w.word === round.word);
+                speakText(round.word, "level2_fullword_" + (audioIdx !== -1 ? audioIdx : 0));
                 addScore(250, window.innerWidth / 2, window.innerHeight / 2 - 100);
                 spawnFloatingText("MERGED!", window.innerWidth / 2, window.innerHeight / 2 - 100, "merge");
                 triggerScreenShake("l2-game-playfield");
@@ -955,7 +963,7 @@ function loadLevel3Round() {
             y: byCenter,
             floatCenter: byCenter,
             floatOffset: Math.random() * Math.PI,
-            radius: 35,
+            radius: 80,
             pop: false,
             color: rime.isCorrect ? 'hsl(195, 100%, 45%)' : 'hsl(330, 95%, 60%)'
         });
@@ -1010,16 +1018,15 @@ function handleL3PointerUp(e) {
     isAiming = false;
 
     // Fire!
-    const dx = slingshot.x - projectile.x;
-    const dy = slingshot.y - projectile.y;
-    const pullDist = Math.sqrt(dx*dx + dy*dy);
+    const pullX = projectile.x - slingshot.x;
+    const pullY = projectile.y - slingshot.y;
+    const pullDist = Math.sqrt(pullX*pullX + pullY*pullY);
 
     if (pullDist > 15) {
-        // Set velocities relative to pull
-        // vx shoots opposite to horizontal pull, vy shoots upward, vz shoots forward
-        projectile.vx = -dx * 0.08;
-        projectile.vy = -dy * 0.08 - 2.5; 
-        projectile.vz = dy * 0.0003 + 0.012; 
+        // Set velocities opposite to pull direction
+        projectile.vx = -pullX * 0.12;
+        projectile.vy = -pullY * 0.12 - 3.5; 
+        projectile.vz = pullY * 0.0003 + 0.025; 
         
         projectile.z = 0;
         isFlying = true;
@@ -1054,8 +1061,8 @@ function level3Loop() {
     balloons.forEach(b => {
         if (!b.pop) {
             b.y = b.floatCenter + Math.sin(time + b.floatOffset) * 12;
-            // Draw balloon (far away, scale is small, let's say 0.35)
-            drawBalloon3D(l3Ctx, b, 0.35);
+            // Draw balloon (with larger scale for better visibility)
+            drawBalloon3D(l3Ctx, b, 0.85);
         }
     });
 
@@ -1066,8 +1073,18 @@ function level3Loop() {
         projectile.vy += gravity;
         projectile.z += projectile.vz;
 
+        // Out of bounds safety reset (always active when flying)
+        if (projectile.y > h + 100 || 
+            projectile.z > 1.4 || 
+            projectile.z < -0.4 || 
+            projectile.x < -150 || 
+            projectile.x > w + 150) {
+            isFlying = false;
+            resetSlingshot(300);
+        }
+
         // Check collision at depth z >= 1.0
-        if (projectile.z >= 1.0) {
+        if (projectile.z >= 1.0 && !l3IsChecking) {
             // Check collision in projected coordinates
             const scale = 1 - 1.0 * 0.72; // 0.28
             const projX = w / 2 + (projectile.x - w / 2) * scale;
@@ -1079,8 +1096,8 @@ function level3Loop() {
                     const dx = projX - b.x;
                     const dy = projY - b.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    // Balloon radius is 35 * 0.35 = 12.25, proj block radius is about 15
-                    if (dist < 45) {
+                    // Collision check matching larger balloons
+                    if (dist < 80) {
                         b.pop = true;
                         isFlying = false;
                         hit = true;
@@ -1092,6 +1109,7 @@ function level3Loop() {
             if (!hit) {
                 // Fly past horizon or fall down
                 if (projectile.y > h + 50 || projectile.z > 1.3) {
+                    isFlying = false;
                     resetSlingshot(300);
                 }
             }
@@ -1255,16 +1273,16 @@ function drawTrajectory3D(ctx, w, h, horizonY, slingshot, projectile) {
     ctx.save();
     ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
     
-    const dx = slingshot.x - projectile.x;
-    const dy = slingshot.y - projectile.y;
+    const pullX = projectile.x - slingshot.x;
+    const pullY = projectile.y - slingshot.y;
 
     let tx = projectile.x;
     let ty = projectile.y;
     let tz = 0;
 
-    let tvx = -dx * 0.08;
-    let tvy = -dy * 0.08 - 2.5;
-    let tvz = dy * 0.0003 + 0.012;
+    let tvx = -pullX * 0.12;
+    let tvy = -pullY * 0.12 - 3.5;
+    let tvz = pullY * 0.0003 + 0.025;
 
     for (let i = 0; i < 25; i++) {
         tx += tvx;
@@ -1881,6 +1899,32 @@ const ambientStars = [];
 let ambientBubbles = [];
 let ambientPopParticles = [];
 
+function speakBubblePhonetically(bubbleText) {
+    const clean = bubbleText.replace(/\//g, '');
+    let clipKey = null;
+    
+    const mappings = {
+        "sh": "onset_sh",
+        "co": "level2_slice_reinforce_0_0",
+        "ing": "rime_ing",
+        "ba": "level2_slice_reinforce_4_0",
+        "na": "level2_slice_reinforce_4_1",
+        "pho": "level2_slice_reinforce_1_0",
+        "ed": "rime_ed",
+        "c": "onset_c",
+        "p": "onset_p",
+        "a": "onset_a",
+        "t": "onset_t",
+        "ics": "rime_ics"
+    };
+    
+    if (mappings[clean]) {
+        clipKey = mappings[clean];
+    }
+    
+    speakText(clean, clipKey);
+}
+
 function initAmbientBackground() {
     const canvas = document.getElementById("ambient-canvas");
     resizeCanvas(canvas);
@@ -1912,6 +1956,7 @@ function initAmbientBackground() {
             if (dist < b.r) {
                 b.pop = true;
                 playSynthSound('slice'); // Pop sound
+                speakBubblePhonetically(b.text); // Say the sound phonetically
 
                 // Split into cartoon gravity particles
                 const letters = b.text.replace(/\//g, '').split('');
