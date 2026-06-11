@@ -152,13 +152,17 @@ body {
 
 #main-menu {
     flex: 1;
-    display: flex;
+    display: none; /* Hidden by default to prevent overlapping other screens */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 20px;
     z-index: 2;
     overflow-y: auto;
+}
+
+#main-menu.active-screen {
+    display: flex !important;
 }
 
 .logo-container {
