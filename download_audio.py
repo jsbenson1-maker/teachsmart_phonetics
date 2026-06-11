@@ -9,6 +9,11 @@ audio_clips = {
     "level1_sentence_0": "The quick brown fox",
     "level1_sentence_1": "Phonetics is very fun",
     "level1_sentence_2": "Read a book today",
+    "level1_sentence_3": "The cat sat on the mat",
+    "level1_sentence_4": "A happy dog wags its tail",
+    "level1_sentence_5": "Birds fly high in the blue sky",
+    "level1_sentence_6": "The sun shines bright and warm",
+    "level1_sentence_7": "Children love to play games together",
     
     # Target and distractor words (Level 1)
     "word_the": "The",
@@ -30,6 +35,28 @@ audio_clips = {
     "word_apple": "apple",
     "word_word": "word",
     "word_hello": "hello",
+    "word_sat": "sat",
+    "word_on": "on",
+    "word_mat": "mat",
+    "word_happy": "happy",
+    "word_wags": "wags",
+    "word_its": "its",
+    "word_tail": "tail",
+    "word_birds": "birds",
+    "word_fly": "fly",
+    "word_high": "high",
+    "word_in": "in",
+    "word_blue": "blue",
+    "word_sky": "sky",
+    "word_shines": "shines",
+    "word_bright": "bright",
+    "word_and": "and",
+    "word_warm": "warm",
+    "word_children": "children",
+    "word_love": "love",
+    "word_to": "to",
+    "word_games": "games",
+    "word_together": "together",
 
     # Level 2 words & syllables
     "level2_fullword_0": "cooperate",
@@ -54,16 +81,64 @@ audio_clips = {
     "level2_slice_reinforce_3_1": "no",
     "level2_slice_reinforce_3_2": "saur",
     
+    "level2_fullword_4": "banana",
+    "level2_slice_reinforce_4_0": "ba",
+    "level2_slice_reinforce_4_1": "na",
+    "level2_slice_reinforce_4_2": "na",
+    
+    "level2_fullword_5": "computer",
+    "level2_slice_reinforce_5_0": "com",
+    "level2_slice_reinforce_5_1": "pu",
+    "level2_slice_reinforce_5_2": "ter",
+    
+    "level2_fullword_6": "helicopter",
+    "level2_slice_reinforce_6_0": "he",
+    "level2_slice_reinforce_6_1": "li",
+    "level2_slice_reinforce_6_2": "cop",
+    "level2_slice_reinforce_6_3": "ter",
+    
+    "level2_fullword_7": "alligator",
+    "level2_slice_reinforce_7_0": "al",
+    "level2_slice_reinforce_7_1": "li",
+    "level2_slice_reinforce_7_2": "ga",
+    "level2_slice_reinforce_7_3": "tor",
+    
+    "level2_fullword_8": "butterfly",
+    "level2_slice_reinforce_8_0": "but",
+    "level2_slice_reinforce_8_1": "ter",
+    "level2_slice_reinforce_8_2": "fly",
+    
+    "level2_fullword_9": "adventure",
+    "level2_slice_reinforce_9_0": "ad",
+    "level2_slice_reinforce_9_1": "ven",
+    "level2_slice_reinforce_9_2": "ture",
+    
     # Level 3 words & blending elements
     "level3_target_0": "Construct the word: cat",
     "level3_target_1": "Construct the word: string",
     "level3_target_2": "Construct the word: play",
     "level3_target_3": "Construct the word: ship",
+    "level3_target_4": "Construct the word: frog",
+    "level3_target_5": "Construct the word: glove",
+    "level3_target_6": "Construct the word: brick",
+    "level3_target_7": "Construct the word: clock",
+    "level3_target_8": "Construct the word: spoon",
+    "level3_target_9": "Construct the word: nest",
+    "level3_target_10": "Construct the word: train",
+    "level3_target_11": "Construct the word: beach",
     
     "onset_c": "c",
     "onset_str": "str",
     "onset_pl": "pl",
     "onset_sh": "sh",
+    "onset_fr": "fr",
+    "onset_gl": "gl",
+    "onset_br": "br",
+    "onset_cl": "cl",
+    "onset_sp": "sp",
+    "onset_n": "n",
+    "onset_tr": "tr",
+    "onset_b": "b",
     
     "rime_at": "at",
     "rime_ing": "ing",
@@ -71,6 +146,14 @@ audio_clips = {
     "rime_ot": "ot",
     "rime_ip": "ip",
     "rime_ed": "ed",
+    "rime_og": "og",
+    "rime_ove": "ove",
+    "rime_ick": "ick",
+    "rime_ock": "ock",
+    "rime_oon": "oon",
+    "rime_est": "est",
+    "rime_ain": "ain",
+    "rime_each": "each",
     
     "word_string": "string",
     "word_play": "play",
@@ -80,7 +163,25 @@ audio_clips = {
     "word_plot": "plot",
     "word_shed": "shed",
     
-    # Level 4 elements
+    "word_frog": "frog",
+    "word_glove": "glove",
+    "word_brick": "brick",
+    "word_clock": "clock",
+    "word_spoon": "spoon",
+    "word_nest": "nest",
+    "word_train": "train",
+    "word_beach": "beach",
+    
+    "word_frove": "frove",
+    "word_glog": "glog",
+    "word_brock": "brock",
+    "word_click": "click",
+    "word_spest": "spest",
+    "word_noon": "noon",
+    "word_treach": "treach",
+    "word_bain": "bain",
+    
+    # Level 4 elements (Chain 1: bat/cat/cap/cop/top/toy)
     "level4_start_bat": "Start word is: bat",
     "word_bat": "bat",
     "level4_craft_cat": "You crafted: cat",
@@ -95,6 +196,25 @@ audio_clips = {
     "word_bpt": "bpt",
     "word_cpt": "cpt",
     "word_coy": "coy",
+
+    # Level 4 elements (Chain 2: pig/pin/pen/pan/fan/fin)
+    "level4_start_pig": "Start word is: pig",
+    "word_pig": "pig",
+    "level4_craft_pin": "You crafted: pin",
+    "level4_craft_pen": "You crafted: pen",
+    "level4_craft_pan": "You crafted: pan",
+    "level4_craft_fan": "You crafted: fan",
+    "level4_craft_fin": "You crafted: fin",
+    
+    "word_pin": "pin",
+    "word_pen": "pen",
+    "word_pan": "pan",
+    "word_fan": "fan",
+    "word_fin": "fin",
+    "word_fig": "fig",
+    "word_peg": "peg",
+    "word_pag": "pag",
+    "word_fag": "fag",
     
     # Introductions & Wins
     "level1_intro": "Listen carefully, then blast the words in the correct order!",
@@ -126,7 +246,7 @@ for key, text in audio_clips.items():
     
     # Skip if already exists
     if os.path.exists(dest_path):
-        print(f"Skipping '{key}' (already exists)")
+        # print(f"Skipping '{key}' (already exists)")
         downloaded += 1
         continue
         

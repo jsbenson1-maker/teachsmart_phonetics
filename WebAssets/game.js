@@ -7,6 +7,15 @@ let currentScore = 0;
 let activeScreen = "main-menu";
 let activeLevel = 0;
 
+// Helper to shuffle array (Fisher-Yates)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 // Speech synthesis and audio setup
 let synthVoices = [];
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -261,12 +270,17 @@ function stopLevel4() {
    ================================================================= */
 
 let l1LoopId = null;
-let l1Ships = [];
-let l1Sentences = [
+let l1SentencesDatabase = [
     { text: "The quick brown fox", words: ["The", "quick", "brown", "fox"] },
     { text: "Phonetics is very fun", words: ["Phonetics", "is", "very", "fun"] },
-    { text: "Read a book today", words: ["Read", "a", "book", "today"] }
+    { text: "Read a book today", words: ["Read", "a", "book", "today"] },
+    { text: "The cat sat on the mat", words: ["The", "cat", "sat", "on", "the", "mat"] },
+    { text: "A happy dog wags its tail", words: ["A", "happy", "dog", "wags", "its", "tail"] },
+    { text: "Birds fly high in the blue sky", words: ["Birds", "fly", "high", "in", "the", "blue", "sky"] },
+    { text: "The sun shines bright and warm", words: ["The", "sun", "shines", "bright", "and", "warm"] },
+    { text: "Children love to play games together", words: ["Children", "love", "to", "play", "games", "together"] }
 ];
+let l1Sentences = [];
 let l1CurrentIndex = 0;
 let l1TargetWordIdx = 0;
 let l1Canvas, l1Ctx;
@@ -276,6 +290,9 @@ function startLevel1() {
     l1Canvas = document.getElementById("l1-canvas");
     l1Ctx = l1Canvas.getContext("2d");
     resizeCanvas(l1Canvas);
+
+    // Randomize the level sequence
+    l1Sentences = shuffleArray([...l1SentencesDatabase]).slice(0, 3);
 
     l1CurrentIndex = 0;
     l1TargetWordIdx = 0;
@@ -506,26 +523,32 @@ function createCelebration() {
 
 /* =================================================================
    LEVEL 2: SYLLABLE SHREDDER LOGIC (FRUIT NINJA STYLE)
-   ================================================================= */
-
-let l2LoopId = null;
-let l2Canvas, l2Ctx;
-let l2Words = [
+   ================================================================= */const l2WordsDatabase = [
     { word: "cooperate", syllables: ["co", "o", "pe", "rate"] },
     { word: "phonetics", syllables: ["pho", "ne", "tics"] },
-    { word: "education", syllables: ["ed", "u", "ca", "tion"] }
+    { word: "education", syllables: ["ed", "u", "ca", "tion"] },
+    { word: "dinosaur", syllables: ["di", "no", "saur"] },
+    { word: "banana", syllables: ["ba", "na", "na"] },
+    { word: "computer", syllables: ["com", "pu", "ter"] },
+    { word: "helicopter", syllables: ["he", "li", "cop", "ter"] },
+    { word: "alligator", syllables: ["al", "li", "ga", "tor"] },
+    { word: "butterfly", syllables: ["but", "ter", "fly"] },
+    { word: "adventure", syllables: ["ad", "ven", "ture"] }
 ];
+let l2Words = [];
 let l2CurrentIndex = 0;
 let l2TargetSyllableIdx = 0;
 let l2Blocks = [];
 let l2Explosions = [];
 let mousePath = [];
-let isMouseDown = false;
 
 function startLevel2() {
     l2Canvas = document.getElementById("l2-canvas");
     l2Ctx = l2Canvas.getContext("2d");
     resizeCanvas(l2Canvas);
+
+    // Randomize the level sequence
+    l2Words = shuffleArray([...l2WordsDatabase]).slice(0, 3);
 
     l2CurrentIndex = 0;
     l2TargetSyllableIdx = 0;
@@ -817,25 +840,30 @@ function distToSegment(p, v, w) {
 
 /* =================================================================
    LEVEL 3: ONSET-RIME SLINGSHOT LOGIC (AIM & FIRE PHYSICS)
-   ================================================================= */
-
-let l3LoopId = null;
-let l3Canvas, l3Ctx;
-let l3Words = [
+   ================================================================= */const l3WordsDatabase = [
     { target: "cat", onset: "c", rime: "at", distractor: "ing", correctIdx: 0 },
     { target: "string", onset: "str", rime: "ing", distractor: "at", correctIdx: 1 },
     { target: "play", onset: "pl", rime: "ay", distractor: "ot", correctIdx: 0 },
-    { target: "ship", onset: "sh", rime: "ip", distractor: "ed", correctIdx: 0 }
+    { target: "ship", onset: "sh", rime: "ip", distractor: "ed", correctIdx: 0 },
+    { target: "frog", onset: "fr", rime: "og", distractor: "ove", correctIdx: 0 },
+    { target: "glove", onset: "gl", rime: "ove", distractor: "og", correctIdx: 1 },
+    { target: "brick", onset: "br", rime: "ick", distractor: "ock", correctIdx: 0 },
+    { target: "clock", onset: "cl", rime: "ock", distractor: "ick", correctIdx: 1 },
+    { target: "spoon", onset: "sp", rime: "oon", distractor: "est", correctIdx: 0 },
+    { target: "nest", onset: "n", rime: "est", distractor: "oon", correctIdx: 1 },
+    { target: "train", onset: "tr", rime: "ain", distractor: "each", correctIdx: 0 },
+    { target: "beach", onset: "b", rime: "each", distractor: "ain", correctIdx: 1 }
 ];
+let l3Words = [];
 let l3CurrentIndex = 0;
 let l3IsChecking = false;
 
 // Slingshot State
-let slingshot = { x: 0, y: 0, radius: 25 };
-let projectile = { x: 0, y: 0, vx: 0, vy: 0, radius: 25, text: "" };
+let slingshot = { x: 0, y: 0, radius: 30 };
+let projectile = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, radius: 25, text: "" };
 let balloons = [];
-let gravity = 0.20;
-let maxPull = 90;
+let gravity = 0.15; // Lighter gravity for perspective flight
+let maxPull = 110;
 let isAiming = false;
 let isFlying = false;
 
@@ -843,6 +871,9 @@ function startLevel3() {
     l3Canvas = document.getElementById("l3-canvas");
     l3Ctx = l3Canvas.getContext("2d");
     resizeCanvas(l3Canvas);
+
+    // Randomize the level sequence
+    l3Words = shuffleArray([...l3WordsDatabase]).slice(0, 3);
 
     l3CurrentIndex = 0;
     l3IsChecking = false;
@@ -879,20 +910,23 @@ function loadLevel3Round() {
     document.getElementById("l3-target-word").innerText = round.target;
     
     // Announce target (pre-recorded audio)
-    speakText(`Construct the word: ${round.target}`, `level3_target_${l3CurrentIndex}`);
+    const audioIdx = l3WordsDatabase.findIndex(w => w.target === round.target);
+    speakText(`Construct the word: ${round.target}`, `level3_target_${audioIdx !== -1 ? audioIdx : 0}`);
 
     const w = l3Canvas.width;
     const h = l3Canvas.height;
 
-    // Position slingshot
-    slingshot.x = w * 0.18;
-    slingshot.y = h * 0.65;
+    // Position slingshot (front center)
+    slingshot.x = w / 2;
+    slingshot.y = h - 90;
     
     projectile.text = round.onset + "-";
     projectile.x = slingshot.x;
     projectile.y = slingshot.y;
+    projectile.z = 0;
     projectile.vx = 0;
     projectile.vy = 0;
+    projectile.vz = 0;
     
     isAiming = false;
     isFlying = false;
@@ -908,9 +942,9 @@ function loadLevel3Round() {
     rimes.sort(() => Math.random() - 0.5);
 
     rimes.forEach((rime, idx) => {
-        // Position on the right side
-        const bx = w * (0.55 + idx * 0.22);
-        const byCenter = h * (0.32 + idx * 0.16);
+        // Position on the left and right in the background plane (z = 1.0)
+        const bx = w * (0.28 + idx * 0.44);
+        const byCenter = h * 0.32; // higher up, near the horizon
         balloons.push({
             text: rime.text,
             isCorrect: rime.isCorrect,
@@ -919,7 +953,7 @@ function loadLevel3Round() {
             y: byCenter,
             floatCenter: byCenter,
             floatOffset: Math.random() * Math.PI,
-            radius: 40,
+            radius: 35,
             pop: false,
             color: rime.isCorrect ? 'hsl(195, 100%, 45%)' : 'hsl(330, 95%, 60%)'
         });
@@ -933,12 +967,12 @@ function handleL3PointerDown(e) {
     const mx = e.clientX - playfieldRect.left;
     const my = e.clientY - playfieldRect.top;
 
-    // Check distance to projectile
-    const dx = mx - projectile.x;
-    const dy = my - projectile.y;
+    // Check distance to projectile slingshot rest position
+    const dx = mx - slingshot.x;
+    const dy = my - slingshot.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
 
-    if (dist < 50) {
+    if (dist < 60) {
         isAiming = true;
         playSynthSound('snap');
     }
@@ -954,6 +988,10 @@ function handleL3PointerMove(e) {
     // Calculate pull offset
     let dx = mx - slingshot.x;
     let dy = my - slingshot.y;
+
+    // Only allow pulling down (towards yourself)
+    if (dy < 0) dy = 0;
+
     const dist = Math.sqrt(dx*dx + dy*dy);
 
     if (dist > maxPull) {
@@ -976,14 +1014,19 @@ function handleL3PointerUp(e) {
 
     if (pullDist > 15) {
         // Set velocities relative to pull
-        projectile.vx = dx * 0.13;
-        projectile.vy = dy * 0.13;
+        // vx shoots opposite to horizontal pull, vy shoots upward, vz shoots forward
+        projectile.vx = -dx * 0.08;
+        projectile.vy = -dy * 0.08 - 2.5; 
+        projectile.vz = dy * 0.0003 + 0.012; 
+        
+        projectile.z = 0;
         isFlying = true;
         playSynthSound('zap');
     } else {
         // Snap back if pull was too small
         projectile.x = slingshot.x;
         projectile.y = slingshot.y;
+        projectile.z = 0;
     }
 }
 
@@ -995,24 +1038,22 @@ function level3Loop() {
     const h = l3Canvas.height;
 
     // Update slingshot base coordinates on window resize
-    slingshot.x = w * 0.18;
-    slingshot.y = h * 0.65;
+    slingshot.x = w / 2;
+    slingshot.y = h - 90;
 
-    // Render slingshot forks (wood posts)
-    drawSlingshot(l3Ctx);
+    // Horizon line height
+    const horizonY = h * 0.45;
 
-    // Draw elastic bands if aiming
-    if (isAiming) {
-        drawSlingshotBands(l3Ctx);
-    }
+    // Render beautiful 3D background grids/horizon
+    draw3DBackground(l3Ctx, w, h, horizonY);
 
-    // Update balloons floating animation
+    // Update balloons floating animation (at depth z = 1.0)
     const time = Date.now() * 0.0025;
     balloons.forEach(b => {
         if (!b.pop) {
-            b.y = b.floatCenter + Math.sin(time + b.floatOffset) * 20;
-            // Draw balloon
-            drawBalloon(l3Ctx, b);
+            b.y = b.floatCenter + Math.sin(time + b.floatOffset) * 12;
+            // Draw balloon (far away, scale is small, let's say 0.35)
+            drawBalloon3D(l3Ctx, b, 0.35);
         }
     });
 
@@ -1021,46 +1062,86 @@ function level3Loop() {
         projectile.x += projectile.vx;
         projectile.y += projectile.vy;
         projectile.vy += gravity;
+        projectile.z += projectile.vz;
 
-        // Check if projectile goes off-screen
-        if (projectile.x > w + 50 || projectile.y > h + 50 || projectile.x < -50) {
-            resetSlingshot(300);
-        }
+        // Check collision at depth z >= 1.0
+        if (projectile.z >= 1.0) {
+            // Check collision in projected coordinates
+            const scale = 1 - 1.0 * 0.72; // 0.28
+            const projX = w / 2 + (projectile.x - w / 2) * scale;
+            const projY = horizonY + (projectile.y - horizonY) * scale;
 
-        // Check collision with balloons
-        balloons.forEach(b => {
-            if (!b.pop) {
-                const dx = projectile.x - b.x;
-                const dy = projectile.y - b.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < (projectile.radius + b.radius)) {
-                    b.pop = true;
-                    isFlying = false;
-                    checkSlingshotMatch(b);
+            let hit = false;
+            balloons.forEach(b => {
+                if (!b.pop) {
+                    const dx = projX - b.x;
+                    const dy = projY - b.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    // Balloon radius is 35 * 0.35 = 12.25, proj block radius is about 15
+                    if (dist < 45) {
+                        b.pop = true;
+                        isFlying = false;
+                        hit = true;
+                        checkSlingshotMatch(b);
+                    }
+                }
+            });
+
+            if (!hit) {
+                // Fly past horizon or fall down
+                if (projectile.y > h + 50 || projectile.z > 1.3) {
+                    resetSlingshot(300);
                 }
             }
-        });
+        }
     }
 
-    // Render projectile
-    if (!isFlying && !isAiming && !l3IsChecking) {
-        projectile.x = slingshot.x;
-        projectile.y = slingshot.y;
+    // Render slingshot forks (in 3D, behind the projectile if pulled, or in front)
+    drawSlingshot3D(l3Ctx, w, h, slingshot);
+
+    // Draw elastic bands if aiming
+    if (isAiming) {
+        drawSlingshotBands3D(l3Ctx, slingshot, projectile);
     }
-    
+
+    // Draw projectile block with perspective scale
     if (!l3IsChecking || isFlying) {
+        let blockScale = 1.0;
+        let projX = projectile.x;
+        let projY = projectile.y;
+
+        if (isAiming) {
+            // Scale up slightly as pulled back (closer to camera)
+            const dy = projectile.y - slingshot.y;
+            blockScale = 1.0 + dy * 0.0035;
+        } else if (isFlying) {
+            // Interpolate scale down towards the horizon
+            blockScale = 1.0 - projectile.z * 0.72; // shrinks to 0.28 at z = 1.0
+            projX = w / 2 + (projectile.x - w / 2) * blockScale;
+            projY = horizonY + (projectile.y - horizonY) * blockScale;
+        } else {
+            // Rest position
+            projectile.x = slingshot.x;
+            projectile.y = slingshot.y;
+            projectile.z = 0;
+        }
+
+        const blockW = 85 * blockScale;
+        const blockH = 45 * blockScale;
+
         drawConstructorBlock(l3Ctx, {
-            x: projectile.x - projectile.radius - 10,
-            y: projectile.y - 18,
-            w: 70,
-            h: 36,
-            text: projectile.text
+            x: projX - blockW / 2,
+            y: projY - blockH / 2,
+            w: blockW,
+            h: blockH,
+            text: projectile.text,
+            scale: blockScale
         }, '#5a3bb6', '#ffff00');
     }
 
     // Trajectory dots preview
     if (isAiming) {
-        drawTrajectory(l3Ctx);
+        drawTrajectory3D(l3Ctx, w, h, horizonY, slingshot, projectile);
     }
 
     // Particles/explosions update
@@ -1069,109 +1150,213 @@ function level3Loop() {
     l3LoopId = requestAnimationFrame(level3Loop);
 }
 
-function drawSlingshot(ctx) {
+function draw3DBackground(ctx, w, h, horizonY) {
     ctx.save();
-    ctx.strokeStyle = '#8a5a36';
-    ctx.lineWidth = 8;
+    // Horizon gradient glow
+    const grad = ctx.createLinearGradient(0, horizonY - 100, 0, h);
+    grad.addColorStop(0, 'rgba(10, 8, 24, 1.0)');
+    grad.addColorStop(0.3, 'rgba(30, 20, 60, 1.0)');
+    grad.addColorStop(1.0, 'rgba(10, 8, 20, 1.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw horizon line
+    ctx.strokeStyle = 'rgba(0, 191, 255, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY);
+    ctx.lineTo(w, horizonY);
+    ctx.stroke();
+
+    // Perspective grid lines
+    ctx.strokeStyle = 'rgba(138, 43, 226, 0.15)';
+    ctx.lineWidth = 2;
+    const gridLines = 16;
+    for (let i = 0; i <= gridLines; i++) {
+        const xOffset = (w / gridLines) * i;
+        ctx.beginPath();
+        ctx.moveTo(w / 2, horizonY);
+        ctx.lineTo(xOffset, h);
+        ctx.stroke();
+    }
+
+    // Transverse horizontal grid lines
+    for (let j = 0; j < 8; j++) {
+        const z = j / 8;
+        const y = horizonY + (h - horizonY) * Math.pow(z, 2);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawSlingshot3D(ctx, w, h, slingshot) {
+    ctx.save();
+    ctx.strokeStyle = '#6f4420'; 
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    
+    const leftForkX = slingshot.x - 45;
+    const rightForkX = slingshot.x + 45;
+    const forkY = slingshot.y - 30;
+
+    // Draw left post
+    ctx.beginPath();
+    ctx.moveTo(slingshot.x - 12, h);
+    ctx.lineTo(slingshot.x - 12, slingshot.y + 20);
+    ctx.lineTo(leftForkX, forkY);
+    ctx.stroke();
+
+    // Draw right post
+    ctx.beginPath();
+    ctx.moveTo(slingshot.x + 12, h);
+    ctx.lineTo(slingshot.x + 12, slingshot.y + 20);
+    ctx.lineTo(rightForkX, forkY);
+    ctx.stroke();
+
+    // Draw wood caps
+    ctx.fillStyle = '#8a5a36';
+    ctx.beginPath();
+    ctx.arc(leftForkX, forkY, 7, 0, Math.PI * 2);
+    ctx.arc(rightForkX, forkY, 7, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+}
+
+function drawSlingshotBands3D(ctx, slingshot, projectile) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(230, 126, 34, 0.85)';
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
 
-    // Slingshot left fork, right fork, handle
-    ctx.beginPath();
-    ctx.moveTo(slingshot.x - 20, slingshot.y + 15);
-    ctx.lineTo(slingshot.x - 20, slingshot.y + 40);
-    ctx.lineTo(slingshot.x, slingshot.y + 70);
-    ctx.lineTo(slingshot.x, slingshot.y + 100);
-    ctx.stroke();
+    const leftForkX = slingshot.x - 45;
+    const rightForkX = slingshot.x + 45;
+    const forkY = slingshot.y - 30;
 
     ctx.beginPath();
-    ctx.moveTo(slingshot.x + 20, slingshot.y + 15);
-    ctx.lineTo(slingshot.x + 20, slingshot.y + 40);
-    ctx.lineTo(slingshot.x, slingshot.y + 70);
-    ctx.stroke();
-    
-    ctx.restore();
-}
-
-function drawSlingshotBands(ctx) {
-    ctx.save();
-    ctx.strokeStyle = '#e67e22';
-    ctx.lineWidth = 4;
-    
-    // Left band to projectile
-    ctx.beginPath();
-    ctx.moveTo(slingshot.x - 20, slingshot.y + 20);
+    ctx.moveTo(leftForkX, forkY);
     ctx.lineTo(projectile.x, projectile.y);
     ctx.stroke();
 
-    // Right band to projectile
     ctx.beginPath();
-    ctx.moveTo(slingshot.x + 20, slingshot.y + 20);
+    ctx.moveTo(rightForkX, forkY);
     ctx.lineTo(projectile.x, projectile.y);
     ctx.stroke();
 
     ctx.restore();
 }
 
-function drawTrajectory(ctx) {
+function drawTrajectory3D(ctx, w, h, horizonY, slingshot, projectile) {
     ctx.save();
-    ctx.setLineDash([4, 6]);
-    ctx.strokeStyle = 'rgba(255, 255, 0, 0.4)';
-    ctx.lineWidth = 3;
-
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+    
     const dx = slingshot.x - projectile.x;
     const dy = slingshot.y - projectile.y;
+
     let tx = projectile.x;
     let ty = projectile.y;
-    let tvx = dx * 0.13;
-    let tvy = dy * 0.13;
+    let tz = 0;
 
-    ctx.beginPath();
-    ctx.moveTo(tx, ty);
-    for (let i = 0; i < 35; i++) {
+    let tvx = -dx * 0.08;
+    let tvy = -dy * 0.08 - 2.5;
+    let tvz = dy * 0.0003 + 0.012;
+
+    for (let i = 0; i < 25; i++) {
         tx += tvx;
         ty += tvy;
         tvy += gravity;
-        ctx.lineTo(tx, ty);
+        tz += tvz;
+
+        if (tz > 1.1) break;
+
+        const scale = 1 - tz * 0.72;
+        const projX = w / 2 + (tx - w / 2) * scale;
+        const projY = horizonY + (ty - horizonY) * scale;
+
+        ctx.beginPath();
+        ctx.arc(projX, projY, 4 * scale, 0, Math.PI * 2);
+        ctx.fill();
     }
-    ctx.stroke();
     ctx.restore();
 }
 
-function drawBalloon(ctx, b) {
+function drawBalloon3D(ctx, b, scale) {
     ctx.save();
-    ctx.shadowBlur = 10;
+    const r = b.radius * scale;
+    
+    ctx.shadowBlur = 15;
     ctx.shadowColor = b.color;
 
     // Draw balloon circle body
     ctx.fillStyle = b.color;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // Knot at bottom
-    ctx.fillStyle = b.color;
+    // Knot
     ctx.beginPath();
-    ctx.moveTo(b.x, b.y + b.radius);
-    ctx.lineTo(b.x - 6, b.y + b.radius + 8);
-    ctx.lineTo(b.x + 6, b.y + b.radius + 8);
+    ctx.moveTo(b.x, b.y + r);
+    ctx.lineTo(b.x - 4, b.y + r + 5);
+    ctx.lineTo(b.x + 4, b.y + r + 5);
     ctx.closePath();
     ctx.fill();
 
-    // String hanging down
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 2;
+    // String
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(b.x, b.y + b.radius + 8);
-    ctx.quadraticCurveTo(b.x - 5, b.y + b.radius + 25, b.x, b.y + b.radius + 40);
+    ctx.moveTo(b.x, b.y + r + 5);
+    ctx.quadraticCurveTo(b.x - 3, b.y + r + 15, b.x, b.y + r + 25);
     ctx.stroke();
 
-    // Draw text inside balloon
+    // Text
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 20px Outfit";
+    ctx.font = `bold ${Math.floor(22 * scale)}px Outfit`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(b.text, b.x, b.y);
 
+    ctx.restore();
+}
+
+function drawConstructorBlock(ctx, block, fillStyle, strokeStyle) {
+    ctx.save();
+    const scale = block.scale || 1.0;
+    ctx.fillStyle = fillStyle || '#5a3bb6';
+    ctx.strokeStyle = strokeStyle || '#ffff00';
+    ctx.lineWidth = 3 * scale;
+    ctx.shadowBlur = 10 * scale;
+    ctx.shadowColor = ctx.strokeStyle;
+    
+    const x = block.x;
+    const y = block.y;
+    const w = block.w;
+    const h = block.h;
+    const r = 8 * scale;
+    
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Draw text inside
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.floor(18 * scale)}px Outfit`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(block.text, x + w/2, y + h/2);
     ctx.restore();
 }
 
@@ -1181,8 +1366,14 @@ function checkSlingshotMatch(balloon) {
     const combinedWord = projectile.text.replace('-', '') + balloon.text.replace('-', '');
 
     const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
-    const screenX = balloon.x + playfieldRect.left;
-    const screenY = balloon.y + playfieldRect.top;
+    // Balloons are drawn in back coordinates which match canvas coordinates
+    const scale = 1 - 1.0 * 0.72; // 0.28
+    const horizonY = l3Canvas.height * 0.45;
+    const projX = l3Canvas.width / 2 + (projectile.x - l3Canvas.width / 2) * scale;
+    const projY = horizonY + (projectile.y - horizonY) * scale;
+
+    const screenX = projX + playfieldRect.left;
+    const screenY = projY + playfieldRect.top;
 
     if (combinedWord === round.target) {
         // SUCCESS
@@ -1190,7 +1381,7 @@ function checkSlingshotMatch(balloon) {
         speakText(round.target, "word_" + round.target); // pre-recorded audio
 
         addScore(200, screenX, screenY);
-        createExplosion(balloon.x, balloon.y, '#00ff00');
+        createExplosion(projX, projY, '#00ff00');
         createCelebration();
         triggerScreenShake("l3-game-playfield");
 
@@ -1209,7 +1400,7 @@ function checkSlingshotMatch(balloon) {
         addScore(-50, screenX, screenY);
         spawnFloatingText("TRY AGAIN!", screenX, screenY - 30, "failure");
         triggerScreenShake("l3-game-playfield");
-        createExplosion(balloon.x, balloon.y, '#ff0000');
+        createExplosion(projX, projY, '#ff0000');
 
         resetSlingshot(1500);
     }
@@ -1219,8 +1410,10 @@ function resetSlingshot(delay) {
     setTimeout(() => {
         projectile.x = slingshot.x;
         projectile.y = slingshot.y;
+        projectile.z = 0;
         projectile.vx = 0;
         projectile.vy = 0;
+        projectile.vz = 0;
         isFlying = false;
         isAiming = false;
         l3IsChecking = false;
@@ -1229,6 +1422,7 @@ function resetSlingshot(delay) {
             if (!b.isCorrect) b.pop = false;
         });
     }, delay);
+}
 }
 
 
@@ -1242,24 +1436,54 @@ let l4Inventory = ["c", "p", "o", "t"];
 let l4EarnedCards = new Set();
 
 // Rewards dictionary
-const l4CardRewards = {
-    "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common" },
-    "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon" },
-    "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare" },
-    "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon" },
-    "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare" }
-};
+let l4CardRewards = {};
+
+const l4Configs = [
+    {
+        baselineWord: "bat",
+        phonemes: ["b", "a", "t"],
+        inventory: ["c", "p", "o", "t"],
+        targetCards: {
+            "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common" },
+            "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon" },
+            "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare" },
+            "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon" },
+            "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare" }
+        },
+        startPrompt: "Start word is: bat. Drag sound bubbles to mutate the word!",
+        clipKey: "level4_start_bat"
+    },
+    {
+        baselineWord: "pig",
+        phonemes: ["p", "i", "g"],
+        inventory: ["n", "e", "a", "f"],
+        targetCards: {
+            "pin": { name: "Safety Pin Card", art: "🧷", rarity: "Common" },
+            "pen": { name: "Ink Pen Card", art: "🖋️", rarity: "Uncommon" },
+            "pan": { name: "Frying Pan Card", art: "🍳", rarity: "Common" },
+            "fan": { name: "Electric Fan Card", art: "🪭", rarity: "Rare" },
+            "fin": { name: "Shark Fin Card", art: "🦈", rarity: "Rare" }
+        },
+        startPrompt: "Start word is: pig. Drag sound bubbles to mutate the word!",
+        clipKey: "level4_start_pig"
+    }
+];
 
 function startLevel4() {
-    l4BaselineWord = "bat";
-    l4Phonemes = ["b", "a", "t"];
     l4EarnedCards.clear();
+
+    // Randomly select a configuration for Level 4
+    const config = l4Configs[Math.floor(Math.random() * l4Configs.length)];
+    l4BaselineWord = config.baselineWord;
+    l4Phonemes = [...config.phonemes];
+    l4Inventory = [...config.inventory];
+    l4CardRewards = config.targetCards;
 
     // Populate locks on cards
     renderCardCabinet();
 
     loadLevel4State();
-    speakText("Start word is: bat. Drag sound bubbles to mutate the word!", "level4_start_bat");
+    speakText(config.startPrompt, config.clipKey);
 }
 
 function loadLevel4State() {
@@ -1653,10 +1877,73 @@ function resizeCanvas(canvas) {
 // Background ambient loop
 let ambientLoopId = null;
 const ambientStars = [];
+let ambientBubbles = [];
+let ambientPopParticles = [];
 
 function initAmbientBackground() {
     const canvas = document.getElementById("ambient-canvas");
     resizeCanvas(canvas);
+    
+    // Add event listener for mouse push force
+    let mouseX = -9999;
+    let mouseY = -9999;
+    window.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    });
+
+    // Add event listener for bubble pop click
+    window.addEventListener("pointerdown", (e) => {
+        if (activeScreen !== "main-menu") return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        for (let i = 0; i < ambientBubbles.length; i++) {
+            const b = ambientBubbles[i];
+            if (b.pop) continue;
+            
+            const dx = mx - b.x;
+            const dy = my - b.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist < b.r) {
+                b.pop = true;
+                playSynthSound('slice'); // Pop sound
+
+                // Split into cartoon gravity particles
+                const letters = b.text.replace(/\//g, '').split('');
+                for (let j = 0; j < 8; j++) {
+                    const l = letters[j % letters.length] || '★';
+                    ambientPopParticles.push({
+                        x: b.x,
+                        y: b.y,
+                        vx: (Math.random() - 0.5) * 7,
+                        vy: -3 - Math.random() * 5,
+                        text: l,
+                        color: b.color.replace('0.45', '0.9'),
+                        alpha: 1.0,
+                        size: 14 + Math.random() * 10,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotSpeed: (Math.random() - 0.5) * 0.2
+                    });
+                }
+
+                // Respawn bubble at bottom after 1s
+                setTimeout(() => {
+                    b.x = Math.random() * canvas.width;
+                    b.y = canvas.height + b.r + 50;
+                    b.vx = (Math.random() - 0.5) * 1.5;
+                    b.vy = -(0.5 + Math.random() * 1.2);
+                    b.pop = false;
+                }, 1200);
+
+                break; // pop only one bubble per click
+            }
+        }
+    });
+
     window.addEventListener("resize", () => {
         resizeCanvas(canvas);
         const l1 = document.getElementById("l1-canvas"); if (l1 && activeScreen === 'level-1') resizeCanvas(l1);
@@ -1667,7 +1954,7 @@ function initAmbientBackground() {
 
     const ctx = canvas.getContext("2d");
     
-    // Spawn ambient dots
+    // Spawn ambient dots (stars)
     for (let i = 0; i < 30; i++) {
         ambientStars.push({
             x: Math.random() * canvas.width,
@@ -1679,9 +1966,27 @@ function initAmbientBackground() {
         });
     }
 
+    const bubbleSounds = ["/a/", "/t/", "/sh/", "/co/", "/ing/", "/ba/", "/na/", "/pho/", "/ics/", "/ed/", "/c/", "/p/"];
+    function spawnMenuBubbles() {
+        ambientBubbles = [];
+        for (let i = 0; i < 10; i++) {
+            ambientBubbles.push({
+                x: Math.random() * canvas.width,
+                y: canvas.height + 40 + Math.random() * 180,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -(0.5 + Math.random() * 1.2),
+                r: 32 + Math.random() * 16,
+                text: bubbleSounds[i % bubbleSounds.length],
+                color: `hsla(${200 + Math.random() * 140}, 85%, 60%, 0.45)`,
+                pop: false
+            });
+        }
+    }
+
     function ambientLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // Stars update
         ambientStars.forEach(star => {
             star.y -= star.speed;
             if (star.y < 0) {
@@ -1689,7 +1994,6 @@ function initAmbientBackground() {
                 star.x = Math.random() * canvas.width;
             }
 
-            // Pulse opacity
             star.alpha += 0.005 * star.fadeDir;
             if (star.alpha > 0.6 || star.alpha < 0.1) {
                 star.fadeDir *= -1;
@@ -1702,6 +2006,114 @@ function initAmbientBackground() {
             ctx.fill();
             ctx.restore();
         });
+
+        // Main Menu Interactive Bubbles
+        if (activeScreen === "main-menu") {
+            if (ambientBubbles.length === 0) {
+                spawnMenuBubbles();
+            }
+
+            // Update & Draw Bubbles
+            ambientBubbles.forEach(b => {
+                if (b.pop) return;
+
+                // Move
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Gentle cursor push force
+                const dx = b.x - mouseX;
+                const dy = b.y - mouseY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < b.r + 60) {
+                    const force = (1 - dist / (b.r + 60)) * 0.4;
+                    b.vx += (dx / dist) * force;
+                    b.vy += (dy / dist) * force;
+                }
+
+                // Bounce off left/right
+                if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
+                if (b.x > canvas.width - b.r) { b.x = canvas.width - b.r; b.vx *= -0.8; }
+
+                // Reset at top to float back up from bottom
+                if (b.y < -b.r) {
+                    b.y = canvas.height + b.r + Math.random() * 50;
+                    b.x = Math.random() * canvas.width;
+                    b.vx = (Math.random() - 0.5) * 1.5;
+                    b.vy = -(0.5 + Math.random() * 1.2);
+                }
+
+                // Speed limits
+                const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                if (speed > 2.5) {
+                    b.vx = (b.vx / speed) * 2.5;
+                    b.vy = (b.vy / speed) * 2.5;
+                }
+
+                // Render shiny radial gradient bubble
+                ctx.save();
+                const bubbleGrad = ctx.createRadialGradient(
+                    b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1,
+                    b.x, b.y, b.r
+                );
+                bubbleGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+                bubbleGrad.addColorStop(0.3, b.color);
+                bubbleGrad.addColorStop(1, b.color.replace('0.45', '0.15'));
+                
+                ctx.fillStyle = bubbleGrad;
+                ctx.strokeStyle = b.color.replace('0.45', '0.85');
+                ctx.lineWidth = 2.5;
+                
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Highlight gloss arc
+                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(b.x - b.r*0.1, b.y - b.r*0.1, b.r * 0.7, Math.PI * 1.05, Math.PI * 1.45);
+                ctx.stroke();
+
+                // Text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 15px Outfit';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(b.text, b.x, b.y);
+                ctx.restore();
+            });
+
+            // Update & Draw Cartoon Pop Particles
+            ambientPopParticles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Gravity
+                p.alpha -= 0.025;
+                p.rotation += p.rotSpeed;
+
+                if (p.alpha <= 0) {
+                    ambientPopParticles.splice(idx, 1);
+                    return;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.font = `bold ${p.size}px Outfit`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillText(p.text, 0, 0);
+                ctx.restore();
+            });
+        } else {
+            // Free memory when not on menu
+            if (ambientBubbles.length > 0) ambientBubbles = [];
+            if (ambientPopParticles.length > 0) ambientPopParticles = [];
+        }
 
         ambientLoopId = requestAnimationFrame(ambientLoop);
     }
