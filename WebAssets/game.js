@@ -115,8 +115,25 @@ function getBestVoice() {
     return null;
 }
 
+// Speak text using pre-recorded high-quality MP3 clips when available, falling back to kid-friendly TTS
+function speakText(text, clipKey) {
+    if (clipKey) {
+        const audio = new Audio(`audio/${clipKey}.mp3`);
+        audio.oncanplaythrough = () => {
+            audio.play().catch(() => {
+                fallbackSpeak(text);
+            });
+        };
+        audio.onerror = () => {
+            fallbackSpeak(text);
+        };
+    } else {
+        fallbackSpeak(text);
+    }
+}
+
 // Speak text using Web Speech API (with SSML stripping and kid-friendly configurations)
-function speakText(text) {
+function fallbackSpeak(text) {
     // Strip XML/SSML tags
     let cleanText = text.replace(/<[^>]*>/g, '');
     
@@ -229,7 +246,13 @@ function stopAllGameLoops() {
     stopLevel1();
     stopLevel2();
     stopLevel3();
+    stopLevel4();
     stopMicAnalysis();
+}
+
+function stopLevel4() {
+    const bodyBubbles = document.querySelectorAll("body > .phoneme-bubble");
+    bodyBubbles.forEach(b => b.remove());
 }
 
 
@@ -261,7 +284,7 @@ function startLevel1() {
 
     // Setup events
     document.getElementById("l1-replay-audio").onclick = () => {
-        speakText(l1Sentences[l1CurrentIndex].text);
+        speakText(l1Sentences[l1CurrentIndex].text, "level1_sentence_" + l1CurrentIndex);
     };
 
     loadLevel1Round();
@@ -286,8 +309,8 @@ function loadLevel1Round() {
     document.getElementById("l1-target-sentence").innerText = `"${round.text}"`;
     l1TargetWordIdx = 0;
 
-    // Speak sentence
-    speakText(round.text);
+    // Speak sentence (pre-recorded audio)
+    speakText(round.text, "level1_sentence_" + l1CurrentIndex);
 
     // Remove old ships
     const playfield = document.getElementById("l1-game-playfield");
@@ -359,6 +382,9 @@ function handleShipZap(ship, clickX, clickY) {
         const localY = clickY - playfieldRect.top;
         createExplosion(localX, localY, '#00ff00');
 
+        // Speak zapped word (pre-recorded audio)
+        speakText(ship.word, "word_" + ship.word.toLowerCase());
+
         // Remove ship
         ship.element.remove();
         l1Ships = l1Ships.filter(s => s !== ship);
@@ -373,7 +399,7 @@ function handleShipZap(ship, clickX, clickY) {
             l1CurrentIndex++;
             if (l1CurrentIndex >= l1Sentences.length) {
                 // Completed level
-                speakText("Level One Completed! Excellent Job!");
+                speakText("Level One Completed! Excellent Job!", "level1_win");
                 setTimeout(() => {
                     showScreen("main-menu");
                 }, 2000);
@@ -509,7 +535,7 @@ function startLevel2() {
 
     // Replay button
     document.getElementById("l2-replay-audio").onclick = () => {
-        speakText(l2Words[l2CurrentIndex].word);
+        speakText(l2Words[l2CurrentIndex].word, "level2_fullword_" + l2CurrentIndex);
     };
 
     // Slice input handlers
@@ -578,8 +604,8 @@ function loadLevel2Round() {
     document.getElementById("l2-target-word").innerText = round.word;
     l2TargetSyllableIdx = 0;
 
-    // Speak initial full word
-    speakText(round.word);
+    // Speak initial full word (pre-recorded audio)
+    speakText(round.word, "level2_fullword_" + l2CurrentIndex);
 
     // Clear old bubbles
     const playfield = document.getElementById("l2-game-playfield");
@@ -668,8 +694,8 @@ function sliceBlock(block, sliceX, sliceY) {
         addScore(150, screenX, screenY);
         createExplosion(sliceX, sliceY, '#00ffff');
 
-        // Pronounce syllable
-        speakText(block.syllable);
+        // Pronounce syllable (pre-recorded audio)
+        speakText(block.syllable, "level2_slice_reinforce_" + l2CurrentIndex + "_" + block.index);
 
         l2TargetSyllableIdx++;
 
@@ -677,7 +703,7 @@ function sliceBlock(block, sliceX, sliceY) {
             // MERGE SUCCESS
             setTimeout(() => {
                 playSynthSound('success');
-                speakText(round.word);
+                speakText(round.word, "level2_fullword_" + l2CurrentIndex);
                 addScore(250, window.innerWidth / 2, window.innerHeight / 2 - 100);
                 spawnFloatingText("MERGED!", window.innerWidth / 2, window.innerHeight / 2 - 100, "merge");
                 triggerScreenShake("l2-game-playfield");
@@ -685,7 +711,7 @@ function sliceBlock(block, sliceX, sliceY) {
 
                 l2CurrentIndex++;
                 if (l2CurrentIndex >= l2Words.length) {
-                    speakText("Level Two Completed! Fantastic!");
+                    speakText("Level Two Completed! Fantastic!", "level2_win");
                     setTimeout(() => showScreen("main-menu"), 2500);
                 } else {
                     setTimeout(loadLevel2Round, 2000);
@@ -789,22 +815,29 @@ function distToSegment(p, v, w) {
    LEVEL 3: ONSET-RIME CONSTRUCTOR LOGIC (TETRIS STYLE)
    ================================================================= */
 
+/* =================================================================
+   LEVEL 3: ONSET-RIME SLINGSHOT LOGIC (AIM & FIRE PHYSICS)
+   ================================================================= */
+
 let l3LoopId = null;
 let l3Canvas, l3Ctx;
 let l3Words = [
-    { target: "cat", onset: "c-", rime: "-at", distractor: "-ing", correctX: 0.25 },
-    { target: "string", onset: "str-", rime: "-ing", distractor: "-at", correctX: 0.75 },
-    { target: "play", onset: "pl-", rime: "-ay", distractor: "-ot", correctX: 0.25 },
-    { target: "ship", onset: "sh-", rime: "-ip", distractor: "-ed", correctX: 0.25 }
+    { target: "cat", onset: "c", rime: "at", distractor: "ing", correctIdx: 0 },
+    { target: "string", onset: "str", rime: "ing", distractor: "at", correctIdx: 1 },
+    { target: "play", onset: "pl", rime: "ay", distractor: "ot", correctIdx: 0 },
+    { target: "ship", onset: "sh", rime: "ip", distractor: "ed", correctIdx: 0 }
 ];
 let l3CurrentIndex = 0;
-let l3IsChecking = false; // Double-trigger checking lock
+let l3IsChecking = false;
 
-// Block states
-let fallingBlock = { text: "c-", x: 0, y: 0, w: 90, h: 50, xPct: 0.25 };
-let rimeLeft = { text: "-at", x: 0, y: 0, w: 100, h: 50 };
-let rimeRight = { text: "-ing", x: 0, y: 0, w: 100, h: 50 };
-let dropSpeed = 1.0;
+// Slingshot State
+let slingshot = { x: 0, y: 0, radius: 25 };
+let projectile = { x: 0, y: 0, vx: 0, vy: 0, radius: 25, text: "" };
+let balloons = [];
+let gravity = 0.20;
+let maxPull = 90;
+let isAiming = false;
+let isFlying = false;
 
 function startLevel3() {
     l3Canvas = document.getElementById("l3-canvas");
@@ -813,18 +846,16 @@ function startLevel3() {
 
     l3CurrentIndex = 0;
     l3IsChecking = false;
-    
-    // Bind Controls
-    document.getElementById("l3-btn-left").onclick = () => moveFallingBlock(-1);
-    document.getElementById("l3-btn-right").onclick = () => moveFallingBlock(1);
-    document.getElementById("l3-btn-drop").onclick = dropFallingBlock;
+    isAiming = false;
+    isFlying = false;
 
-    window.onkeydown = (e) => {
-        if (activeScreen !== "level-3-screen") return;
-        if (e.key === "ArrowLeft") moveFallingBlock(-1);
-        if (e.key === "ArrowRight") moveFallingBlock(1);
-        if (e.key === "Space" || e.key === " " || e.key === "ArrowDown") dropFallingBlock();
-    };
+    // Bind pointer events directly to the playfield to allow slingshot dragging
+    const playfield = document.getElementById("l3-game-playfield");
+    playfield.style.touchAction = "none"; // prevent scrolling while aiming
+    
+    playfield.onpointerdown = handleL3PointerDown;
+    playfield.onpointermove = handleL3PointerMove;
+    playfield.onpointerup = handleL3PointerUp;
 
     loadLevel3Round();
     l3LoopId = requestAnimationFrame(level3Loop);
@@ -835,45 +866,125 @@ function stopLevel3() {
         cancelAnimationFrame(l3LoopId);
         l3LoopId = null;
     }
-    window.onkeydown = null;
+    const playfield = document.getElementById("l3-game-playfield");
+    if (playfield) {
+        playfield.onpointerdown = null;
+        playfield.onpointermove = null;
+        playfield.onpointerup = null;
+    }
 }
 
 function loadLevel3Round() {
     const round = l3Words[l3CurrentIndex];
     document.getElementById("l3-target-word").innerText = round.target;
     
-    // Voiceover instruction
-    speakText(`Construct the word: ${round.target}`);
+    // Announce target (pre-recorded audio)
+    speakText(`Construct the word: ${round.target}`, `level3_target_${l3CurrentIndex}`);
 
-    // Left is correct for index 0, 2, 3...
-    const leftIsCorrect = round.correctX === 0.25;
+    const w = l3Canvas.width;
+    const h = l3Canvas.height;
 
-    // Spawn block data
-    rimeLeft.text = leftIsCorrect ? round.rime : round.distractor;
-    rimeRight.text = leftIsCorrect ? round.distractor : round.rime;
+    // Position slingshot
+    slingshot.x = w * 0.18;
+    slingshot.y = h * 0.65;
+    
+    projectile.text = round.onset + "-";
+    projectile.x = slingshot.x;
+    projectile.y = slingshot.y;
+    projectile.vx = 0;
+    projectile.vy = 0;
+    
+    isAiming = false;
+    isFlying = false;
+    l3IsChecking = false;
 
-    // Reset falling block with normalized coordinate
-    fallingBlock.text = round.onset;
-    fallingBlock.xPct = 0.25; // Default starts on left
-    fallingBlock.y = 20;
-    dropSpeed = 0.8;
-    l3IsChecking = false; // Reset lock
+    // Clear old balloons and spawn new ones
+    balloons = [];
+    const rimes = [
+        { text: "-" + round.rime, isCorrect: true, key: "rime_" + round.rime },
+        { text: "-" + round.distractor, isCorrect: false, key: "rime_" + round.distractor }
+    ];
+    // Shuffle rimes
+    rimes.sort(() => Math.random() - 0.5);
+
+    rimes.forEach((rime, idx) => {
+        // Position on the right side
+        const bx = w * (0.55 + idx * 0.22);
+        const byCenter = h * (0.32 + idx * 0.16);
+        balloons.push({
+            text: rime.text,
+            isCorrect: rime.isCorrect,
+            key: rime.key,
+            x: bx,
+            y: byCenter,
+            floatCenter: byCenter,
+            floatOffset: Math.random() * Math.PI,
+            radius: 40,
+            pop: false,
+            color: rime.isCorrect ? 'hsl(195, 100%, 45%)' : 'hsl(330, 95%, 60%)'
+        });
+    });
 }
 
-function moveFallingBlock(dir) {
-    if (l3IsChecking) return;
-    playSynthSound('snap');
+function handleL3PointerDown(e) {
+    if (isFlying || l3IsChecking) return;
+    
+    const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
+    const mx = e.clientX - playfieldRect.left;
+    const my = e.clientY - playfieldRect.top;
 
-    if (dir < 0) {
-        fallingBlock.xPct = 0.25;
-    } else {
-        fallingBlock.xPct = 0.75;
+    // Check distance to projectile
+    const dx = mx - projectile.x;
+    const dy = my - projectile.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 50) {
+        isAiming = true;
+        playSynthSound('snap');
     }
 }
 
-function dropFallingBlock() {
-    if (l3IsChecking) return;
-    dropSpeed = 16.0;
+function handleL3PointerMove(e) {
+    if (!isAiming) return;
+
+    const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
+    const mx = e.clientX - playfieldRect.left;
+    const my = e.clientY - playfieldRect.top;
+
+    // Calculate pull offset
+    let dx = mx - slingshot.x;
+    let dy = my - slingshot.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist > maxPull) {
+        dx = (dx / dist) * maxPull;
+        dy = (dy / dist) * maxPull;
+    }
+
+    projectile.x = slingshot.x + dx;
+    projectile.y = slingshot.y + dy;
+}
+
+function handleL3PointerUp(e) {
+    if (!isAiming) return;
+    isAiming = false;
+
+    // Fire!
+    const dx = slingshot.x - projectile.x;
+    const dy = slingshot.y - projectile.y;
+    const pullDist = Math.sqrt(dx*dx + dy*dy);
+
+    if (pullDist > 15) {
+        // Set velocities relative to pull
+        projectile.vx = dx * 0.13;
+        projectile.vy = dy * 0.13;
+        isFlying = true;
+        playSynthSound('zap');
+    } else {
+        // Snap back if pull was too small
+        projectile.x = slingshot.x;
+        projectile.y = slingshot.y;
+    }
 }
 
 function level3Loop() {
@@ -883,168 +994,241 @@ function level3Loop() {
     const w = l3Canvas.width;
     const h = l3Canvas.height;
 
-    // Dynamically update rime positions based on current canvas dimension (handles resize/delayed rendering)
-    rimeLeft.x = w * 0.25 - rimeLeft.w / 2;
-    rimeLeft.y = h - 140;
-    rimeRight.x = w * 0.75 - rimeRight.w / 2;
-    rimeRight.y = h - 140;
+    // Update slingshot base coordinates on window resize
+    slingshot.x = w * 0.18;
+    slingshot.y = h * 0.65;
 
-    // Dynamically calculate falling block absolute position
-    fallingBlock.x = w * fallingBlock.xPct - fallingBlock.w / 2;
+    // Render slingshot forks (wood posts)
+    drawSlingshot(l3Ctx);
 
-    // Draw lines/slots indicating landing zones
-    drawLandingZones(l3Ctx);
-
-    // Update falling block if not landing/checking
-    if (!l3IsChecking) {
-        fallingBlock.y += dropSpeed;
-
-        // Check collision landing
-        const landingY = h - 190;
-        if (fallingBlock.y >= landingY) {
-            fallingBlock.y = landingY;
-            l3IsChecking = true; // Lock execution
-            checkMatchLanding();
-        }
+    // Draw elastic bands if aiming
+    if (isAiming) {
+        drawSlingshotBands(l3Ctx);
     }
 
-    // Render rime blocks
-    drawConstructorBlock(l3Ctx, rimeLeft, '#1e1c3e', '#00ffff');
-    drawConstructorBlock(l3Ctx, rimeRight, '#1e1c3e', '#ff00ff');
+    // Update balloons floating animation
+    const time = Date.now() * 0.0025;
+    balloons.forEach(b => {
+        if (!b.pop) {
+            b.y = b.floatCenter + Math.sin(time + b.floatOffset) * 20;
+            // Draw balloon
+            drawBalloon(l3Ctx, b);
+        }
+    });
 
-    // Render falling block
-    drawConstructorBlock(l3Ctx, fallingBlock, '#5a3bb6', '#ffff00');
+    // Update projectile flight
+    if (isFlying) {
+        projectile.x += projectile.vx;
+        projectile.y += projectile.vy;
+        projectile.vy += gravity;
 
-    // Explosions / juice
+        // Check if projectile goes off-screen
+        if (projectile.x > w + 50 || projectile.y > h + 50 || projectile.x < -50) {
+            resetSlingshot(300);
+        }
+
+        // Check collision with balloons
+        balloons.forEach(b => {
+            if (!b.pop) {
+                const dx = projectile.x - b.x;
+                const dy = projectile.y - b.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < (projectile.radius + b.radius)) {
+                    b.pop = true;
+                    isFlying = false;
+                    checkSlingshotMatch(b);
+                }
+            }
+        });
+    }
+
+    // Render projectile
+    if (!isFlying && !isAiming && !l3IsChecking) {
+        projectile.x = slingshot.x;
+        projectile.y = slingshot.y;
+    }
+    
+    if (!l3IsChecking || isFlying) {
+        drawConstructorBlock(l3Ctx, {
+            x: projectile.x - projectile.radius - 10,
+            y: projectile.y - 18,
+            w: 70,
+            h: 36,
+            text: projectile.text
+        }, '#5a3bb6', '#ffff00');
+    }
+
+    // Trajectory dots preview
+    if (isAiming) {
+        drawTrajectory(l3Ctx);
+    }
+
+    // Particles/explosions update
     updateExplosions(l3Ctx);
 
     l3LoopId = requestAnimationFrame(level3Loop);
 }
 
-function drawLandingZones(ctx) {
-    const w = l3Canvas.width;
-    const h = l3Canvas.height;
-
+function drawSlingshot(ctx) {
     ctx.save();
-    ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#8a5a36';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
 
-    // Left slot guide line
+    // Slingshot left fork, right fork, handle
     ctx.beginPath();
-    ctx.moveTo(w * 0.25, 0);
-    ctx.lineTo(w * 0.25, h);
+    ctx.moveTo(slingshot.x - 20, slingshot.y + 15);
+    ctx.lineTo(slingshot.x - 20, slingshot.y + 40);
+    ctx.lineTo(slingshot.x, slingshot.y + 70);
+    ctx.lineTo(slingshot.x, slingshot.y + 100);
     ctx.stroke();
 
-    // Right slot guide line
     ctx.beginPath();
-    ctx.moveTo(w * 0.75, 0);
-    ctx.lineTo(w * 0.75, h);
+    ctx.moveTo(slingshot.x + 20, slingshot.y + 15);
+    ctx.lineTo(slingshot.x + 20, slingshot.y + 40);
+    ctx.lineTo(slingshot.x, slingshot.y + 70);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawSlingshotBands(ctx) {
+    ctx.save();
+    ctx.strokeStyle = '#e67e22';
+    ctx.lineWidth = 4;
+    
+    // Left band to projectile
+    ctx.beginPath();
+    ctx.moveTo(slingshot.x - 20, slingshot.y + 20);
+    ctx.lineTo(projectile.x, projectile.y);
+    ctx.stroke();
+
+    // Right band to projectile
+    ctx.beginPath();
+    ctx.moveTo(slingshot.x + 20, slingshot.y + 20);
+    ctx.lineTo(projectile.x, projectile.y);
     ctx.stroke();
 
     ctx.restore();
 }
 
-function drawConstructorBlock(ctx, block, fill, stroke) {
+function drawTrajectory(ctx) {
     ctx.save();
-    
-    // Glow effect
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = stroke;
-
-    // Background
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = stroke;
+    ctx.setLineDash([4, 6]);
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.4)';
     ctx.lineWidth = 3;
-    
-    // Draw rounded rect
-    const r = 10;
-    const x = block.x;
-    const y = block.y;
-    const w = block.w;
-    const h = block.h;
+
+    const dx = slingshot.x - projectile.x;
+    const dy = slingshot.y - projectile.y;
+    let tx = projectile.x;
+    let ty = projectile.y;
+    let tvx = dx * 0.13;
+    let tvy = dy * 0.13;
 
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h - r);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.moveTo(tx, ty);
+    for (let i = 0; i < 35; i++) {
+        tx += tvx;
+        ty += tvy;
+        tvy += gravity;
+        ctx.lineTo(tx, ty);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawBalloon(ctx, b) {
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = b.color;
+
+    // Draw balloon circle body
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Knot at bottom
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y + b.radius);
+    ctx.lineTo(b.x - 6, b.y + b.radius + 8);
+    ctx.lineTo(b.x + 6, b.y + b.radius + 8);
     ctx.closePath();
     ctx.fill();
+
+    // String hanging down
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y + b.radius + 8);
+    ctx.quadraticCurveTo(b.x - 5, b.y + b.radius + 25, b.x, b.y + b.radius + 40);
     ctx.stroke();
 
-    // Inner highlight
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Text label
+    // Draw text inside balloon
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 20px Outfit";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.shadowBlur = 0; // disable shadow for clean text
-    ctx.fillText(block.text, block.x + block.w / 2, block.y + block.h / 2);
+    ctx.fillText(b.text, b.x, b.y);
 
     ctx.restore();
 }
 
-function checkMatchLanding() {
+function checkSlingshotMatch(balloon) {
+    l3IsChecking = true;
     const round = l3Words[l3CurrentIndex];
-    
-    // Check lanes using normalized coordinates (independent of canvas size)
-    const onLeft = fallingBlock.xPct === 0.25;
-    const selectedRime = onLeft ? rimeLeft.text : rimeRight.text;
-    const combinedWord = fallingBlock.text.replace('-', '') + selectedRime.replace('-', '');
+    const combinedWord = projectile.text.replace('-', '') + balloon.text.replace('-', '');
+
+    const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
+    const screenX = balloon.x + playfieldRect.left;
+    const screenY = balloon.y + playfieldRect.top;
 
     if (combinedWord === round.target) {
         // SUCCESS
         playSynthSound('success');
-        speakText(round.target);
-        
-        // Local coordinates for popup
-        const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
-        const screenX = fallingBlock.x + fallingBlock.w / 2 + playfieldRect.left;
-        const screenY = fallingBlock.y + playfieldRect.top;
+        speakText(round.target, "word_" + round.target); // pre-recorded audio
 
         addScore(200, screenX, screenY);
-        createExplosion(fallingBlock.x + fallingBlock.w / 2, fallingBlock.y + 25, '#00ff00');
+        createExplosion(balloon.x, balloon.y, '#00ff00');
         createCelebration();
         triggerScreenShake("l3-game-playfield");
 
         l3CurrentIndex++;
         if (l3CurrentIndex >= l3Words.length) {
-            speakText("Level Three Completed! Astounding!");
+            speakText("Level Three Completed! Astounding!", "level3_win");
             setTimeout(() => showScreen("main-menu"), 2500);
         } else {
-            setTimeout(loadLevel3Round, 1800);
+            setTimeout(loadLevel3Round, 2000);
         }
     } else {
         // FAILURE
         playSynthSound('failure');
-        speakText(combinedWord); // Say incorrect blend (e.g. "cing")
-
-        const playfieldRect = document.getElementById("l3-game-playfield").getBoundingClientRect();
-        const screenX = fallingBlock.x + fallingBlock.w / 2 + playfieldRect.left;
-        const screenY = fallingBlock.y + playfieldRect.top;
+        speakText(combinedWord, "word_" + combinedWord); // pre-recorded failure blend audio
 
         addScore(-50, screenX, screenY);
         spawnFloatingText("TRY AGAIN!", screenX, screenY - 30, "failure");
         triggerScreenShake("l3-game-playfield");
-        createExplosion(fallingBlock.x + fallingBlock.w / 2, fallingBlock.y + 25, '#ff0000');
+        createExplosion(balloon.x, balloon.y, '#ff0000');
 
-        // Respawn block after delay and unlock
-        setTimeout(() => {
-            fallingBlock.y = 20;
-            dropSpeed = 0.8;
-            l3IsChecking = false; // Unlock for next try
-        }, 1200);
+        resetSlingshot(1500);
     }
+}
+
+function resetSlingshot(delay) {
+    setTimeout(() => {
+        projectile.x = slingshot.x;
+        projectile.y = slingshot.y;
+        projectile.vx = 0;
+        projectile.vy = 0;
+        isFlying = false;
+        isAiming = false;
+        l3IsChecking = false;
+        // Un-pop balloons if failed
+        balloons.forEach(b => {
+            if (!b.isCorrect) b.pop = false;
+        });
+    }, delay);
 }
 
 
@@ -1075,7 +1259,7 @@ function startLevel4() {
     renderCardCabinet();
 
     loadLevel4State();
-    speakText(`Start word is: bat. Drag sound bubbles to mutate the word!`);
+    speakText("Start word is: bat. Drag sound bubbles to mutate the word!", "level4_start_bat");
 }
 
 function loadLevel4State() {
@@ -1110,31 +1294,46 @@ function loadLevel4State() {
             bubble.style.transform = "scale(1.15)";
             bubble.style.boxShadow = "0 8px 20px var(--accent-glow)";
 
-            const rect = bubble.getBoundingClientRect();
-            const shiftX = e.clientX - rect.left;
-            const shiftY = e.clientY - rect.top;
+            // Calculate document-relative coordinates of the click
+            const pageX = e.pageX !== undefined ? e.pageX : (e.clientX + window.scrollX);
+            const pageY = e.pageY !== undefined ? e.pageY : (e.clientY + window.scrollY);
 
+            // Get viewport-relative rect of the bubble and convert to document-relative
+            const rect = bubble.getBoundingClientRect();
+            const bubblePageX = rect.left + window.scrollX;
+            const bubblePageY = rect.top + window.scrollY;
+
+            // Calculate offset of the click from the top-left corner of the bubble
+            const shiftX = pageX - bubblePageX;
+            const shiftY = pageY - bubblePageY;
+
+            const originalParent = bubble.parentElement;
             const origPosition = bubble.style.position;
             const origZIndex = bubble.style.zIndex;
             const origLeft = bubble.style.left;
             const origTop = bubble.style.top;
             const origTransition = bubble.style.transition;
 
-            bubble.style.position = "fixed";
+            // Append directly to document.body to escape containing-blocks of backdrop-filters
+            document.body.appendChild(bubble);
+
+            bubble.style.position = "absolute";
             bubble.style.zIndex = "1000";
             bubble.style.transition = "none";
 
-            moveAt(e.clientX, e.clientY);
+            moveAt(pageX, pageY);
 
-            function moveAt(clientX, clientY) {
-                bubble.style.left = `${clientX - shiftX}px`;
-                bubble.style.top = `${clientY - shiftY}px`;
+            function moveAt(currPageX, currPageY) {
+                bubble.style.left = `${currPageX - shiftX}px`;
+                bubble.style.top = `${currPageY - shiftY}px`;
             }
 
             let hoveredSlot = null;
 
             function onPointerMove(moveEvent) {
-                moveAt(moveEvent.clientX, moveEvent.clientY);
+                const movePageX = moveEvent.pageX !== undefined ? moveEvent.pageX : (moveEvent.clientX + window.scrollX);
+                const movePageY = moveEvent.pageY !== undefined ? moveEvent.pageY : (moveEvent.clientY + window.scrollY);
+                moveAt(movePageX, movePageY);
 
                 // Find slot underneath the drag element
                 bubble.style.pointerEvents = 'none';
@@ -1170,24 +1369,51 @@ function loadLevel4State() {
 
                 const slot = elemBelow ? elemBelow.closest('.letter-slot') : null;
 
-                // Restore default styles
-                bubble.style.transform = "";
-                bubble.style.boxShadow = "";
-                bubble.style.position = origPosition;
-                bubble.style.zIndex = origZIndex;
-                bubble.style.left = origLeft;
-                bubble.style.top = origTop;
-                bubble.style.transition = origTransition;
-
                 if (slot) {
                     slot.classList.remove('hovered');
                     const slotIdx = parseInt(slot.dataset.index);
+                    
+                    // Restore original styles
+                    bubble.style.transform = "";
+                    bubble.style.boxShadow = "";
+                    bubble.style.position = origPosition;
+                    bubble.style.zIndex = origZIndex;
+                    bubble.style.left = origLeft;
+                    bubble.style.top = origTop;
+                    bubble.style.transition = origTransition;
+
+                    originalParent.appendChild(bubble); // Put it back into normal DOM flow
                     handlePhonemeDrop(letter, slotIdx);
                 } else {
-                    // Slide back animation
+                    // Create placeholder to find absolute screen landing target
+                    const placeholder = document.createElement("div");
+                    placeholder.style.width = "60px";
+                    placeholder.style.height = "60px";
+                    placeholder.style.visibility = "hidden";
+                    originalParent.appendChild(placeholder);
+                    
+                    const placeholderRect = placeholder.getBoundingClientRect();
+                    const placeholderPageX = placeholderRect.left + window.scrollX;
+                    const placeholderPageY = placeholderRect.top + window.scrollY;
+                    
+                    // Animate back to placeholder
                     bubble.style.transition = "all 0.25s ease-out";
+                    bubble.style.left = `${placeholderPageX}px`;
+                    bubble.style.top = `${placeholderPageY}px`;
+                    
                     setTimeout(() => {
+                        placeholder.remove();
+                        
+                        // Restore original styles
+                        bubble.style.transform = "";
+                        bubble.style.boxShadow = "";
+                        bubble.style.position = origPosition;
+                        bubble.style.zIndex = origZIndex;
+                        bubble.style.left = origLeft;
+                        bubble.style.top = origTop;
                         bubble.style.transition = origTransition;
+                        
+                        originalParent.appendChild(bubble);
                     }, 250);
                 }
             };
@@ -1212,7 +1438,7 @@ function handlePhonemeDrop(phoneme, slotIdx) {
         l4Phonemes = candidateArray;
         
         playSynthSound('success');
-        speakText(`You crafted: ${candidateWord}`);
+        speakText(`You crafted: ${candidateWord}`, "level4_craft_" + candidateWord);
 
         // Award card
         l4EarnedCards.add(candidateWord);
@@ -1232,7 +1458,7 @@ function handlePhonemeDrop(phoneme, slotIdx) {
         // Check level completion: if collected 3 cards, win!
         if (l4EarnedCards.size >= 3) {
             setTimeout(() => {
-                speakText("Level Four Completed! Master crafter!");
+                speakText("Level Four Completed! Master crafter!", "level4_win");
                 createCelebration();
                 setTimeout(() => showScreen("main-menu"), 2500);
             }, 1500);
@@ -1240,7 +1466,7 @@ function handlePhonemeDrop(phoneme, slotIdx) {
     } else {
         // INVALID MUTATION / GIBBERISH
         playSynthSound('failure');
-        speakText(candidateWord); // Speak the failed blend (e.g. "bpt")
+        speakText(candidateWord, "word_" + candidateWord); // Speak the failed blend (e.g. "bpt")
 
         const glassRect = document.querySelector(".magnifier-glass").getBoundingClientRect();
         const popupX = glassRect.left + glassRect.width/2;
