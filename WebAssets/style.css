@@ -499,7 +499,7 @@ body {
 #l3-grid-container {
     position: relative;
     width: 100%;
-    height: calc(100% - 70px);
+    height: 100%;
     overflow: hidden;
 }
 

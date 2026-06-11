@@ -928,7 +928,7 @@ function loadLevel3Round() {
 
     // Position slingshot (front center)
     slingshot.x = w / 2;
-    slingshot.y = h - 90;
+    slingshot.y = h - 240;
     
     projectile.text = round.onset + "-";
     projectile.x = slingshot.x;
@@ -1052,7 +1052,7 @@ function level3Loop() {
 
     // Update slingshot base coordinates on window resize
     slingshot.x = w / 2;
-    slingshot.y = h - 90;
+    slingshot.y = h - 240;
 
     // Horizon line height
     const horizonY = h * 0.45;
@@ -1460,11 +1460,11 @@ const l4Configs = [
         phonemes: ["b", "a", "t"],
         inventory: ["c", "p", "o", "t"],
         targetCards: {
-            "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common", hint: "Meow! Can you make the word CAT?" },
-            "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon", hint: "Put it on your head. Can you craft CAP?" },
-            "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare", hint: "A friendly police officer. Can you craft COP?" },
-            "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon", hint: "It spins around and around! Can you craft TOP?" },
-            "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare", hint: "Fun to play with. Can you craft TOY?" }
+            "cat": { name: "Curious Cat Card", art: "🐱", rarity: "Common", hint: "Meow! This furry animal loves to catch mice." },
+            "cap": { name: "Captain Cap Card", art: "🧢", rarity: "Uncommon", hint: "You wear this on your head to block the sun." },
+            "cop": { name: "Cool Cop Card", art: "👮", rarity: "Rare", hint: "This person keeps us safe and drives a car with sirens." },
+            "top": { name: "Spinning Top Card", art: "🌪️", rarity: "Uncommon", hint: "An object that spins around and around on its pointed bottom." },
+            "toy": { name: "Shiny Toy Card", art: "🧸", rarity: "Rare", hint: "A fun object that you play with." }
         },
         startPrompt: "Start word is: bat. Drag sound bubbles to mutate the word!",
         clipKey: "level4_start_bat"
@@ -1474,11 +1474,11 @@ const l4Configs = [
         phonemes: ["p", "i", "g"],
         inventory: ["n", "e", "a", "f"],
         targetCards: {
-            "pin": { name: "Safety Pin Card", art: "🧷", rarity: "Common", hint: "A sharp safety pin. Can you craft PIN?" },
-            "pen": { name: "Ink Pen Card", art: "🖋️", rarity: "Uncommon", hint: "Used for writing. Can you craft PEN?" },
-            "pan": { name: "Frying Pan Card", art: "🍳", rarity: "Common", hint: "Used to cook food. Can you craft PAN?" },
-            "fan": { name: "Electric Fan Card", art: "🪭", rarity: "Rare", hint: "Keeps you cool on a hot day. Can you craft FAN?" },
-            "fin": { name: "Shark Fin Card", art: "🦈", rarity: "Rare", hint: "Helps a fish swim. Can you craft FIN?" }
+            "pin": { name: "Safety Pin Card", art: "🧷", rarity: "Common", hint: "A small, sharp metal thing used to hold clothes together." },
+            "pen": { name: "Ink Pen Card", art: "🖋️", rarity: "Uncommon", hint: "You use this to write or draw with ink that cannot be erased." },
+            "pan": { name: "Frying Pan Card", art: "🍳", rarity: "Common", hint: "You put this flat metal dish on the stove to fry eggs." },
+            "fan": { name: "Electric Fan Card", art: "🪭", rarity: "Rare", hint: "This spins to blow cool air on you when it's hot." },
+            "fin": { name: "Shark Fin Card", art: "🦈", rarity: "Rare", hint: "This part helps a fish swim and balance in the water." }
         },
         startPrompt: "Start word is: pig. Drag sound bubbles to mutate the word!",
         clipKey: "level4_start_pig"
