@@ -18,6 +18,9 @@ namespace PhoneticsEdu.Core
         protected int currentScore = 0;
         protected bool isGameActive = false;
 
+        public int CurrentScore => currentScore;
+        public bool IsGameActive => isGameActive;
+
         protected virtual void Awake()
         {
             // Find references if not already assigned

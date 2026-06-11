@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);MOCK_UNITY_COMPILATION</DefineConstants>
   </PropertyGroup>
+  <ItemGroup>
+    <None Update="WebAssets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeachSmart: Phonetic Challenge</title>
+    <!-- Google Fonts: Outfit (rounded/kid-friendly) & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- BACKGROUND DUST PARTICLES -->
+        <div class="ambient-glow bg-glow-1"></div>
+        <div class="ambient-glow bg-glow-2"></div>
+        <canvas id="ambient-canvas"></canvas>
+
+        <!-- TOP BAR FOR NAV & SCORE -->
+        <header id="app-header" class="hidden">
+            <button id="header-back-btn" class="juice-btn">← Back to Menu</button>
+            <div id="header-title" class="brand-text">TeachSmart</div>
+            <div id="header-score-container">
+                <span class="score-label">SCORE:</span>
+                <span id="header-score-val" class="score-val">0000</span>
+            </div>
+        </header>
+
+        <!-- MAIN MENU -->
+        <section id="main-menu" class="active-screen">
+            <div class="logo-container">
+                <h1 id="animated-logo" class="brand-logo">
+                    <span class="logo-part-1">TeachSmart</span>
+                    <span class="logo-part-2">Phonetic Challenge</span>
+                </h1>
+            </div>
+            
+            <p class="menu-subtitle">Explore sounds, syllables, and spelling through fun gameplay!</p>
+
+            <div class="menu-grid">
+                <!-- Level 1 -->
+                <button class="menu-card level-card juice-btn" onclick="startGame(1)">
+                    <div class="card-icon">🚀</div>
+                    <div class="card-title">Level 1: Word Blaster</div>
+                    <div class="card-desc">Zap words in sequence to read complete sentences!</div>
+                </button>
+                <!-- Level 2 -->
+                <button class="menu-card level-card juice-btn" onclick="startGame(2)">
+                    <div class="card-icon">⚔️</div>
+                    <div class="card-title">Level 2: Syllable Shredder</div>
+                    <div class="card-desc">Slice blocks in mid-air to segment words!</div>
+                </button>
+                <!-- Level 3 -->
+                <button class="menu-card level-card juice-btn" onclick="startGame(3)">
+                    <div class="card-icon">🧱</div>
+                    <div class="card-title">Level 3: Onset-Rime</div>
+                    <div class="card-desc">Slide and snap sounds together to construct words!</div>
+                </button>
+                <!-- Level 4 -->
+                <button class="menu-card level-card juice-btn" onclick="startGame(4)">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">Level 4: Phoneme Isolator</div>
+                    <div class="card-desc">Mutate letters in a magnifying glass to collect cards!</div>
+                </button>
+            </div>
+
+            <div class="menu-footer">
+                <button id="menu-diag-btn" class="diag-btn juice-btn" onclick="showScreen('diagnostics')">
+                    🎙️ Voice & Mic Diagnostics
+                </button>
+            </div>
+        </section>
+
+        <!-- LEVEL 1: WORD BLASTER SCREEN -->
+        <section id="level-1-screen" class="game-screen">
+            <div class="game-instructions">
+                <h2>Level 1: Word Blaster</h2>
+                <p>Listen to the voiceover, then click the floating word ships in the exact order spoken!</p>
+            </div>
+
+            <div class="level-status-row">
+                <div id="l1-target-sentence" class="target-sentence-box">"Listen carefully..."</div>
+                <button id="l1-replay-audio" class="audio-btn juice-btn">🔊 Hear Again</button>
+            </div>
+
+            <div id="l1-game-playfield" class="playfield space-bg">
+                <canvas id="l1-canvas"></canvas>
+                <!-- Ships will spawn dynamically in JS -->
+            </div>
+        </section>
+
+        <!-- LEVEL 2: SYLLABLE SHREDDER SCREEN -->
+        <section id="level-2-screen" class="game-screen">
+            <div class="game-instructions">
+                <h2>Level 2: Syllable Shredder</h2>
+                <p>Slash through the syllable blocks tossed into the air in correct chronological order!</p>
+            </div>
+
+            <div class="level-status-row">
+                <div class="target-word-container">
+                    <span class="label">TARGET WORD:</span>
+                    <span id="l2-target-word" class="target-word-val">...</span>
+                </div>
+                <button id="l2-replay-audio" class="audio-btn juice-btn">🔊 Pronounce Word</button>
+            </div>
+
+            <div id="l2-game-playfield" class="playfield ninja-bg">
+                <canvas id="l2-canvas"></canvas>
+                <!-- Syllable blocks will spawn dynamically in JS -->
+            </div>
+        </section>
+
+        <!-- LEVEL 3: ONSET-RIME CONSTRUCTOR SCREEN -->
+        <section id="level-3-screen" class="game-screen">
+            <div class="game-instructions">
+                <h2>Level 3: Onset-Rime Constructor</h2>
+                <p>Move the falling Onset block left/right and drop it onto the matching Rime block at the bottom!</p>
+            </div>
+
+            <div class="level-status-row">
+                <div class="target-word-container">
+                    <span class="label">CONSTRUCT WORD:</span>
+                    <span id="l3-target-word" class="target-word-val">...</span>
+                </div>
+            </div>
+
+            <div id="l3-game-playfield" class="playfield constructor-bg">
+                <!-- Grid layout with falling block and static blocks -->
+                <div id="l3-grid-container">
+                    <canvas id="l3-canvas"></canvas>
+                </div>
+
+                <!-- Touch/Mouse Mobile-friendly Controls -->
+                <div class="constructor-controls">
+                    <button id="l3-btn-left" class="control-btn juice-btn">◀ Move Left</button>
+                    <button id="l3-btn-drop" class="control-btn drop-btn juice-btn">⚡ Drop Block</button>
+                    <button id="l3-btn-right" class="control-btn juice-btn">Move Right ▶</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: PHONEME ISOLATOR SCREEN -->
+        <section id="level-4-screen" class="game-screen">
+            <div class="game-instructions">
+                <h2>Level 4: Phoneme Isolator</h2>
+                <p>Drag floating sound bubbles onto the spelling slots in the magnifying glass to craft new words!</p>
+            </div>
+
+            <div class="level-layout-grid">
+                <!-- LEFT COLUMN: PLAY AREA -->
+                <div class="isolator-play-area">
+                    <div id="l4-magnifier-container">
+                        <!-- Magnifier frame -->
+                        <div class="magnifier-glass">
+                            <div class="magnifier-rim"></div>
+                            <!-- Spelling slots inside the glass -->
+                            <div id="l4-spelling-slots">
+                                <!-- Slots generated by JS -->
+                            </div>
+                            <div class="magnifier-handle"></div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory area for floating bubbles -->
+                    <div id="l4-bubble-inventory">
+                        <h3>Available Sound Bubbles</h3>
+                        <div id="l4-bubbles-container">
+                            <!-- Bubbles generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: COLLECTIBLES -->
+                <div class="isolator-collectibles-area">
+                    <h3>🏆 Earned Reward Cards</h3>
+                    <p class="collectible-subtitle">Craft correct word mutations to unlock cards!</p>
+                    <div id="l4-card-cabinet" class="card-cabinet">
+                        <!-- Collectible cards will render here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AUDIO DIAGNOSTICS SCREEN -->
+        <section id="diagnostics-screen" class="game-screen">
+            <div class="game-instructions">
+                <h2>🎙️ Synth Voice Pro & Microphone Diagnostics</h2>
+                <p>Test the text-to-speech audio engine and verify your recording volume levels.</p>
+            </div>
+
+            <div class="diagnostics-grid">
+                <!-- Text-to-Speech diagnostic -->
+                <div class="diag-card">
+                    <h3>🔊 Speech Synthesis Test</h3>
+                    <p>Enter text and choose a voice to hear the synthesizer pronounce it.</p>
+                    
+                    <div class="input-group">
+                        <label for="diag-tts-input">SSML or Plain Text:</label>
+                        <textarea id="diag-tts-input" rows="3"><phoneme alphabet="ipa" ph="kæt">cat</phoneme></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="diag-voice-select">Available System Voices:</label>
+                        <select id="diag-voice-select">
+                            <!-- Options filled dynamically -->
+                        </select>
+                    </div>
+
+                    <button id="diag-play-tts" class="diag-action-btn juice-btn">🔊 Play Pronunciation</button>
+                </div>
+
+                <!-- Microphone diagnostic -->
+                <div class="diag-card">
+                    <h3>🎤 Live Microphone Input Analyzer</h3>
+                    <p>Test your connected microphone. Speak to watch the real-time signal levels.</p>
+                    
+                    <button id="diag-toggle-mic" class="diag-action-btn juice-btn mic-off">
+                        🎤 Start Microphone Recording
+                    </button>
+
+                    <div class="mic-status-indicator">
+                        <span>Recording Status:</span>
+                        <strong id="diag-mic-status">OFFLINE</strong>
+                    </div>
+
+                    <!-- Signal progress bar -->
+                    <div class="input-level-container">
+                        <label>Recording Signal Level:</label>
+                        <div class="progress-bar-bg">
+                            <div id="diag-mic-progress" class="progress-bar-fill"></div>
+                        </div>
+                        <span id="diag-mic-vol-text">0.0%</span>
+                    </div>
+
+                    <!-- Live wave visualizer canvas -->
+                    <div class="visualizer-container">
+                        <canvas id="diag-visualizer-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- UI JUICE FLOATING MESSAGES & CONFETTI OVERLAYS -->
+    <div id="juice-overlay-container"></div>
+
+    <!-- Load game JavaScript -->
+    <script src="game.js"></script>
+</body>
+</html>
