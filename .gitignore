@@ -1,0 +1,12 @@
+# MSBuild / dotnet temporary build outputs
+bin/
+obj/
+
+# Local text-to-speech cache files
+PhoneticsCache/
+
+# User-specific settings or IDE configs
+.vs/
+.idea/
+*.user
+*.suo
